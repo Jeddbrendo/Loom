@@ -145,7 +145,6 @@
         <div id="canvas-container" class="flex-1 relative overflow-hidden">
             <div id="lane-headers-container" class="absolute top-0 left-0 w-full pointer-events-none overflow-hidden z-[40]" style="height: calc(100% - 140px);"></div>
                 
-            <!-- Floating interactive info overlay for the Ancient Hebrew label updated for themes -->
             <div id="hebrew-info-btn" class="absolute left-2 z-50 hidden cursor-pointer group hover:scale-105 transition-transform" onclick="openHebrewInfoModal()">
                 <span class="text-[10px] font-extrabold app-text-secondary group-hover:app-text-primary transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg app-card shadow-lg">
                     Ancient Hebrew (Biblical) <i data-lucide="info" class="w-3 h-3 text-indigo-400"></i>
@@ -866,23 +865,8 @@
 
                     importBuffer = [];
                     importBufferLanes = [];
-                    let localLaneMap = new Map(); 
-
-                    function buildLaneMap(nodes, isRoot=true) {
-                        nodes.forEach(n => {
-                            if (!isRoot) localLaneMap.set(n.name.toLowerCase(), n.id);
-                            if(n.children) buildLaneMap(n.children, false);
-                        });
-                    }
-                    buildLaneMap(lanesTree);
-
-                    let csvRootGroup = {
-                        id: generateLaneId(), name: 'Imported Categories', collapsed: false, color: '#818cf8', icon: 'layers', children: []
-                    };
-                    importBufferLanes.push(csvRootGroup);
-
-                    let defaultLaneId = generateLaneId();
-                    let defaultLaneCreated = false;
+                    
+                    let rawEvents = [];
 
                     for(let i=1; i<data.length; i++) {
                         const row = data[i];
@@ -906,25 +890,9 @@
                             if(eYear < sYear) eYear = sYear; 
                         }
 
-                        let laneId = defaultLaneId;
+                        let catName = 'Uncategorized';
                         if (iLane >= 0 && row[iLane] && row[iLane].trim() !== '') {
-                            let lName = row[iLane].trim();
-                            let lKey = lName.toLowerCase();
-                            
-                            if (localLaneMap.has(lKey)) {
-                                laneId = localLaneMap.get(lKey);
-                            } else {
-                                laneId = generateLaneId();
-                                localLaneMap.set(lKey, laneId);
-                                csvRootGroup.children.push({
-                                    id: laneId, name: lName, collapsed: false, color: '#818cf8', children: []
-                                });
-                            }
-                        } else if (!defaultLaneCreated) {
-                            csvRootGroup.children.push({
-                                id: defaultLaneId, name: 'Uncategorized', collapsed: false, color: '#888888', children: []
-                            });
-                            defaultLaneCreated = true;
+                            catName = row[iLane].trim();
                         }
 
                         const isSpan = eYear !== null;
@@ -939,11 +907,11 @@
                             images = row[iImage].split(/\s*\|\s*|\s*,\s+/).filter(u => u.trim() !== '');
                         }
 
-                        importBuffer.push({
+                        rawEvents.push({
                             id: `evt-csv-${Date.now()}-${i}`,
                             title: title,
                             desc: iDesc >= 0 ? row[iDesc] : '',
-                            lane: laneId,
+                            _tempCat: catName,
                             color: (iColor >= 0 && row[iColor]) ? row[iColor] : '#888888',
                             icon: (iIcon >= 0 && row[iIcon]) ? row[iIcon] : 'book-open',
                             images: images,
@@ -959,6 +927,88 @@
                             xEnd: isSpan ? yearToWorld(eYear) : null
                         });
                     }
+
+                    // --- PACKING ALGORITHM ---
+                    let groups = {};
+                    rawEvents.forEach(ev => {
+                        if (!groups[ev._tempCat]) groups[ev._tempCat] = [];
+                        groups[ev._tempCat].push(ev);
+                    });
+
+                    let csvRootGroup = {
+                        id: generateLaneId(), name: 'Imported Categories', collapsed: false, color: '#818cf8', icon: 'layers', children: []
+                    };
+                    importBufferLanes.push(csvRootGroup);
+
+                    const estScale = 0.05;
+                    ctx.font = `600 13px ${userSettings.font}`;
+
+                    Object.keys(groups).forEach(catName => {
+                        let catEvents = groups[catName];
+                        catEvents.sort((a, b) => a.x - b.x);
+
+                        let packedLanes = []; 
+
+                        catEvents.forEach(ev => {
+                            let titleW = ctx.measureText(ev.title || '').width;
+                            let dateW = 150; // Approximated generous date string width
+                            let textW = titleW + dateW + 30; // 30px padding
+                            
+                            let textDays = textW / estScale;
+                            let evStartX, evEndX;
+
+                            if (ev.type === 'span' && ev.xEnd) {
+                                let spanDays = ev.xEnd - ev.x;
+                                evStartX = ev.x;
+                                evEndX = ev.x + Math.max(spanDays, textDays) + (20 / estScale); 
+                            } else {
+                                evStartX = ev.x - (textDays / 2) - (10 / estScale);
+                                evEndX = ev.x + (textDays / 2) + (20 / estScale);
+                            }
+
+                            let placed = false;
+                            for(let i = 0; i < packedLanes.length; i++) {
+                                if(packedLanes[i].endX <= evStartX) {
+                                    packedLanes[i].events.push(ev);
+                                    packedLanes[i].endX = evEndX;
+                                    placed = true;
+                                    break;
+                                }
+                            }
+                            if(!placed) {
+                                packedLanes.push({ endX: evEndX, events: [ev] });
+                            }
+                        });
+
+                        if(packedLanes.length === 1) {
+                            let laneId = generateLaneId();
+                            csvRootGroup.children.push({
+                                id: laneId, name: catName, collapsed: false, color: '#818cf8', children: []
+                            });
+                            packedLanes[0].events.forEach(ev => {
+                                ev.lane = laneId;
+                                delete ev._tempCat;
+                                importBuffer.push(ev);
+                            });
+                        } else {
+                            let groupNode = {
+                                id: generateLaneId(), name: catName, collapsed: false, color: '#818cf8', icon: 'layers', children: []
+                            };
+                            csvRootGroup.children.push(groupNode);
+
+                            packedLanes.forEach((plane, idx) => {
+                                let subLaneId = generateLaneId();
+                                groupNode.children.push({
+                                    id: subLaneId, name: `Row ${idx + 1}`, collapsed: false, color: '#888888', children: []
+                                });
+                                plane.events.forEach(ev => {
+                                    ev.lane = subLaneId;
+                                    delete ev._tempCat;
+                                    importBuffer.push(ev);
+                                });
+                            });
+                        }
+                    });
 
                     if (csvRootGroup.children.length === 0) {
                         importBufferLanes = [];
@@ -1698,7 +1748,7 @@
                 }
             }
 
-            // Override and Inject dynamic ancient months if zooming in close enough
+            // Month Injection
             if (stepYrs === 1 && (yearPx * (30.4375/365.2425)) >= 10 && type === 'HebrewAncient') {
                 const showMonthText = (yearPx * (30.4375/365.2425)) >= 50;
                 const hMonths = ["Nisan", "Iyyar", "Sivan", "Tammuz", "Ab", "Elul", "Ethanim", "Bul", "Chislev", "Tebeth", "Shebat", "Adar"];
