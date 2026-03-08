@@ -27,7 +27,7 @@ LOOM Timelines is a powerful, standalone, single-file HTML web application for c
 * **Local Storage:** All projects, events, and settings are saved automatically to your browser's local storage.
 * **Multi-Project Support:** Create and switch between multiple timeline projects seamlessly.
 * **JSON Export/Import:** Backup your projects or share them with others via JSON files. Export entire projects or specific lane groups.
-* **CSV Bulk Import:** Quickly populate timelines by importing CSV files containing event data (Supports columns for Title, Start Year, End Year, Lane, Color, Image URLs, etc.).
+* **CSV Bulk Import:** Quickly populate timelines by importing CSV files containing event data (Supports columns for Title, Start Year, End Year, Lane, Color, Image URLs, etc.). Download template available: Timeline_Template_Bulk.csv
 
 ### 🎨 Deep Customization
 * **Dark & Light Modes:** Built-in theme toggling.
