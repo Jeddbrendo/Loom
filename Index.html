@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LOOM</title>
+    <meta name="theme-color" content="#050507">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -2829,6 +2833,16 @@
         if (themeBtn) { themeBtn.innerHTML = `<i data-lucide="${isLightMode ? 'moon' : 'sun'}" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>`; }
         if (window.lucide) window.lucide.createIcons();
 
+    </script>
+        <script>
+        // Register the PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker registered successfully'))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+            });
+        }
     </script>
 </body>
 
