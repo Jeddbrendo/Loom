@@ -1,9 +1,11 @@
-const CACHE_NAME = 'loom-pwa-v1';
+const CACHE_NAME = 'loom-pwa-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest'
 ];
