@@ -8,7 +8,7 @@
     <meta name="theme-color" content="#050507">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.svg">
-    <link rel="icon" type="image/svg+xml" href="icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -1782,28 +1782,24 @@
                 let endHebrewYear = Math.ceil((endGregYear + 3761) / step) * step;
                 
                 for (let y = startHebrewYear; y <= endHebrewYear + step; y += step) {
+                    if (y === 0) continue;
+                    const rhJd = HebrewCalendar.getRoshHashanahJDN(y);
+                    const rhWorldDays = HebrewCalendar.jdnToWorldDays(rhJd);
+                    const x = offsetX + rhWorldDays * scale;
+                    
+                    if (x < -100 || x > width + 100) continue;
+
                     if (step > 1) {
-                         const rhJd = HebrewCalendar.getRoshHashanahJDN(y);
-                         const rhWorldDays = HebrewCalendar.jdnToWorldDays(rhJd);
-                         const x = offsetX + rhWorldDays * scale;
-                         if (x >= -50 && x <= width + 50) {
-                            ticks.push({ x, label: y.toString(), is1AD: false, is1000s: true, isMonth: false, isYear: true });
-                         }
+                         ticks.push({ x, label: y.toString(), is1AD: false, is1000s: true, isMonth: false, isYear: true });
                     } else { // Step is 1, original logic
-                        const rhJd = HebrewCalendar.getRoshHashanahJDN(y);
                         const yearDays = HebrewCalendar.getHebrewYearDays(y);
                         const isLeap = HebrewCalendar.isHebrewLeapYear(y);
                         const yearWidth = yearDays * scale;
 
-                        const rhWorldDays = HebrewCalendar.jdnToWorldDays(rhJd);
-                        const x = offsetX + rhWorldDays * scale;
-
-                        if (x >= -50 && x <= width + 50) {
-                            if (yearWidth > 80) {
-                                ticks.push({ x, label: y.toString(), is1AD: false, is1000s: true, isMonth: false, isYear: true });
-                            } else if (yearWidth > 15) {
-                                ticks.push({ x, label: '', is1AD: false, is1000s: true, isMonth: false, isYear: true });
-                            }
+                        if (yearWidth > 80) {
+                            ticks.push({ x, label: y.toString(), is1AD: false, is1000s: true, isMonth: false, isYear: true });
+                        } else if (yearWidth > 15) {
+                            ticks.push({ x, label: '', is1AD: false, is1000s: true, isMonth: false, isYear: true });
                         }
 
                         if (yearWidth > 200) {
@@ -1845,73 +1841,70 @@
             const ticks = [];
             const yearPx = DAYS_IN_YEAR * scale;
             const monthPx = 30.4375 * scale;
+            const dayPx = 1 * scale;
 
+            const yearSteps = [100000, 50000, 25000, 10000, 5000, 2500, 1000, 500, 250, 100, 50, 25, 10, 5, 1];
             let stepYrs = 1;
-            if (yearPx < 100) {
-                const idealStepYrs = 100 / yearPx;
-                const yearSteps = [1, 5, 10, 25, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 25000, 50000, 100000];
-                for (let s of yearSteps) { if (s >= idealStepYrs) { stepYrs = s; break; } }
-                if (idealStepYrs > 100000) stepYrs = Math.ceil(idealStepYrs / 50000) * 50000;
+            for(let s of yearSteps) {
+                if (s * yearPx / 100 > 1) stepYrs = s;
             }
+            if (yearPx > 100) stepYrs = 1;
 
             let startY = Math.floor(worldToYear(-offsetX / scale) / stepYrs) * stepYrs;
             let endY = Math.ceil(worldToYear((width - offsetX) / scale) / stepYrs) * stepYrs;
 
             for (let y = startY; y <= endY; y += stepYrs) {
-                let labelYear = y;
-                if (labelYear === 0) labelYear = 1; 
+                if (y === 0 && stepYrs === 1) continue;
+                let labelYear = y === 0 ? 1 : y;
 
                 let days = labelYear >= 1 ? (labelYear - 1) * DAYS_IN_YEAR : labelYear * DAYS_IN_YEAR;
                 let x = offsetX + (days * scale);
                 
-                let is1AD = labelYear === 1;
-                let is1000s = Math.abs(labelYear) % 1000 === 0 && labelYear !== 1;
-                let label = labelYear >= 1 ? `${labelYear} AD` : `${Math.abs(labelYear)} BC`;
+                let is1AD = labelYear === 1 && y === 1;
+                let is1000s = Math.abs(labelYear) % 1000 === 0 && labelYear !== 0;
+                let label = labelYear > 0 ? `${labelYear} AD` : `${Math.abs(labelYear)} BC`;
                 
-                if (stepYrs === 1 && y === 0) continue; 
                 ticks.push({ x, label, is1AD, is1000s, isMonth: false, isYear: true });
             }
 
-            if (stepYrs === 1 && monthPx >= 10) {
-                const showMonthText = monthPx >= 50; 
+            if (stepYrs === 1 && monthPx > 10) {
+                const showMonthText = monthPx > 50; 
                 const mLength = [31, 28.2425, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
                 const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
                 for (let y = startY; y <= endY; y++) {
                     if (y === 0) continue;
-                    let currentDays = y >= 1 ? (y - 1) * DAYS_IN_YEAR : y * DAYS_IN_YEAR;
-                    
+                    let currentDays = y > 0 ? (y - 1) * DAYS_IN_YEAR : y * DAYS_IN_YEAR;
                     for (let m = 0; m < 12; m++) {
-                        if (m !== 0) { 
+                        if (m > 0) { 
                             let x = offsetX + (currentDays * scale);
-                            if (x >= -50 && x <= width + 50) {
-                                ticks.push({ 
-                                    x, 
-                                    label: showMonthText ? mNames[m] : "", 
-                                    is1AD: false, is1000s: false, isMonth: true, isYear: false
-                                });
+                            if (x > -50 && x < width + 50) {
+                                ticks.push({ x, label: showMonthText ? mNames[m] : "", is1AD: false, is1000s: false, isMonth: true, isYear: false });
                             }
                         }
                         currentDays += mLength[m];
                     }
                 }
             }
-
-            if (stepYrs === 1 && scale >= 30) {
-                const showDayText = scale >= 45;
-                let startD = Math.floor(-offsetX / scale);
-                let endD = Math.ceil((width - offsetX) / scale);
-                
-                for (let d = startD; d <= endD; d++) {
-                    let x = offsetX + (d * scale);
-                    if (x >= -50 && x <= width + 50) {
-                        let overlap = ticks.some(t => Math.abs(t.x - x) < 5);
-                        if (!overlap) {
-                            let label = showDayText ? worldToDateStr(d, true).split(' ')[1].replace(',', '') : "";
-                            ticks.push({ x, label, is1AD: false, is1000s: false, isMonth: false, isYear: false });
+            
+            if (dayPx > 15 && stepYrs === 1) {
+                 const showDayText = dayPx > 40;
+                 let startD = Math.floor(-offsetX/scale);
+                 let endD = Math.ceil((width-offsetX)/scale);
+                 for (let d = startD; d <= endD; d++) {
+                    let x = offsetX + d * scale;
+                    if(x > -50 && x < width + 50) {
+                        let y = worldToYear(d);
+                        if (y !== 0) {
+                            let dayOfYear = d - yearToWorld(Math.trunc(y));
+                            if (dayOfYear > 0 && dayOfYear % 30.4375 > 0.9 && dayOfYear % 30.4375 < 1.1) continue; // avoid month overlaps
+                            
+                            let dateStr = worldToDateStr(d, true);
+                            let day = dateStr.split(" ")[1].replace(",", "");
+                            ticks.push({x, label: showDayText ? day : "", is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true});
                         }
                     }
-                }
+                 }
             }
 
             return ticks;
@@ -1944,13 +1937,13 @@
                     ctx.lineWidth = 1;
                     
                     let tickLen = 12; 
-                    if (!tck.isYear) { tickLen = tck.isMonth ? 8 : 5; }
+                    if (!tck.isYear) { tickLen = tck.isMonth ? 8 : (tck.isDay ? 5 : 12); }
                     
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + tickLen); ctx.stroke();
-                    ctx.fillStyle = t.textTertiary; 
-                    ctx.font = tck.isMonth ? `500 10px ${userSettings.font}` : `600 11px ${userSettings.font}`;
                     
-                    if (tck.label !== "") {
+                    if (tck.label) {
+                        ctx.fillStyle = t.textTertiary; 
+                        ctx.font = tck.isMonth ? `500 10px ${userSettings.font}` : `600 11px ${userSettings.font}`;
                         ctx.fillText(tck.label, tck.x, baseRulerY + (tck.isMonth ? 28 : 32));
                     }
                 }
@@ -1981,9 +1974,9 @@
                     ctx.strokeStyle = t.gridLine;
 
                     for (let y = startY; y <= endY; y += gridStepYrs) {
+                        if (y===0) continue;
                         let labelYear = y;
-                        if (labelYear === 0) labelYear = 1;
-                        let days = labelYear >= 1 ? (labelYear - 1) * DAYS_IN_YEAR : labelYear * DAYS_IN_YEAR;
+                        let days = labelYear > 0 ? (labelYear - 1) * DAYS_IN_YEAR : labelYear * DAYS_IN_YEAR;
                         const x = offsetX + (days * scale);
                         
                         ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
