@@ -7,12 +7,7 @@ LOOM Timelines is a powerful, standalone, single-file HTML web application for c
 ### ⏱️ Rich Visualization & Navigation
 * **High-Performance Canvas:** Renders thousands of events smoothly using HTML5 Canvas.
 * **Infinite Pan & Zoom:** Intuitive navigation using mouse drag, scroll wheel, or touch/pinch gestures.
-* **Dual Calendar Scales:** View standard Gregorian dates alongside secondary historical/geological rulers:
-  * Holocene (HE)
-  * Roman (AUC)
-  * Before Present (BP)
-  * Islamic (AH)
-  * Modern Hebrew (AM)
+* **Dual Calendar Scales:** View standard Gregorian dates alongside secondary historical/geological ruler:
   * Ancient Hebrew (Biblical) with dynamic lunar-solar month approximation.
 * **Dynamic Gridlines:** Toggleable grid snapping to easily align and track eras.
 
