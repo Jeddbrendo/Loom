@@ -1709,13 +1709,21 @@
             const JDN_GREGORIAN_EPOCH = 1721425.5;
 
             function isHebrewLeapYear(year) {
-                return (year * 7 + 1) % 19 < 7;
+                let mod = (year * 7 + 1) % 19;
+                if (mod < 0) mod += 19;
+                return mod < 7;
             }
 
+            // O(1) Mathematical formula replacing the O(N) loop to calculate elapsed months
             function getTotalMonthsSinceEpoch(year) {
-                let months = 0;
-                for (let y = 1; y < year; y++) {
-                    months += isHebrewLeapYear(y) ? 13 : 12;
+                let y = year - 1;
+                let cycles = Math.floor(y / 19);
+                let remainder = y - (cycles * 19);
+                let months = cycles * 235;
+
+                for (let i = 1; i <= remainder; i++) {
+                    let evalYear = cycles * 19 + i;
+                    months += isHebrewLeapYear(evalYear) ? 13 : 12;
                 }
                 return months;
             }
@@ -1729,25 +1737,32 @@
                 let rhJd = Math.floor(moladJd + 0.5);
                 let dayOfWeek = (rhJd + 1) % 7;
 
+                // Rule 1: Molad Zaken
                 if ((moladJd - rhJd + 0.5) >= 0.5) { 
                     rhJd++; dayOfWeek = (dayOfWeek + 1) % 7;
                 }
 
+                // Rule 2: Lo ADU Rosh
                 if ([0, 3, 5].includes(dayOfWeek)) rhJd++;
 
+                // Rule 3: Tuesday Rule
                 if (!isHebrewLeapYear(year)) {
-                    const moladTime = (moladJd - Math.floor(moladJd)) * HALAKIM_PER_DAY;
+                    let moladTime = (moladJd - Math.floor(moladJd)) * HALAKIM_PER_DAY;
+                    if (moladTime < 0) moladTime += HALAKIM_PER_DAY; // safety constraint
                     if (dayOfWeek === 2 && moladTime >= 9 * HALAKIM_PER_HOUR + 204) rhJd += 2;
                 }
 
+                // Rule 4: Monday Rule
                 if (isHebrewLeapYear(year - 1)) {
                     const prevRhJd = getRoshHashanahJDN(year - 1);
                     if (rhJd - prevRhJd === 382) {
-                        const moladTime = (moladJd - Math.floor(moladJd)) * HALAKIM_PER_DAY;
+                        let moladTime = (moladJd - Math.floor(moladJd)) * HALAKIM_PER_DAY;
+                        if (moladTime < 0) moladTime += HALAKIM_PER_DAY; // safety constraint
                         if(dayOfWeek === 1 && moladTime >= 15 * HALAKIM_PER_HOUR + 589) rhJd++;
                     }
                 }
                 
+                // Re-check Lo ADU Rosh after postponements
                 dayOfWeek = (rhJd + 1) % 7;
                 if ([0, 3, 5].includes(dayOfWeek)) rhJd++;
 
@@ -1772,34 +1787,43 @@
             const ticks = [];
             
             if (type === 'HebrewAccurate') {
+                const yearPx = DAYS_IN_YEAR * scale;
+                const yearSteps = [100000, 50000, 25000, 10000, 5000, 2500, 1000, 500, 250, 100, 50, 25, 10, 5, 1];
+                let stepYrs = 1;
+                for(let s of yearSteps) {
+                    if (s * yearPx / 100 > 1) stepYrs = s;
+                }
+                if (yearPx > 100) stepYrs = 1;
+
                 const startGregYear = Math.floor(worldToYear(-offsetX / scale));
                 const endGregYear = Math.ceil(worldToYear((width - offsetX) / scale));
-                
-                const avgYearWidth = 355 * scale;
-                const step = avgYearWidth < 5 ? 100 : (avgYearWidth < 40 ? 10 : 1);
-                
-                let startHebrewYear = Math.floor((startGregYear + 3761) / step) * step;
-                let endHebrewYear = Math.ceil((endGregYear + 3761) / step) * step;
-                
-                for (let y = startHebrewYear; y <= endHebrewYear + step; y += step) {
-                    if (y === 0) continue;
+
+                let startHebrewYear = Math.floor((startGregYear + 3761) / stepYrs) * stepYrs;
+                let endHebrewYear = Math.ceil((endGregYear + 3761) / stepYrs) * stepYrs;
+
+                for (let y = startHebrewYear; y <= endHebrewYear + stepYrs; y += stepYrs) {
+                    if (y === 0 && stepYrs === 1) continue; 
+
                     const rhJd = HebrewCalendar.getRoshHashanahJDN(y);
                     const rhWorldDays = HebrewCalendar.jdnToWorldDays(rhJd);
                     const x = offsetX + rhWorldDays * scale;
-                    
+
                     if (x < -100 || x > width + 100) continue;
 
-                    if (step > 1) {
-                         ticks.push({ x, label: y.toString(), is1AD: false, is1000s: true, isMonth: false, isYear: true });
-                    } else { // Step is 1, original logic
+                    if (stepYrs > 1) {
+                        let is1000s = Math.abs(y) % 1000 === 0 && y !== 0;
+                        ticks.push({ x, label: y.toString(), is1AD: false, is1000s: is1000s, isMonth: false, isYear: true });
+                    } else {
                         const yearDays = HebrewCalendar.getHebrewYearDays(y);
                         const isLeap = HebrewCalendar.isHebrewLeapYear(y);
                         const yearWidth = yearDays * scale;
 
+                        let is1000s = Math.abs(y) % 1000 === 0 && y !== 0;
+
                         if (yearWidth > 80) {
-                            ticks.push({ x, label: y.toString(), is1AD: false, is1000s: true, isMonth: false, isYear: true });
+                            ticks.push({ x, label: y.toString(), is1AD: false, is1000s: is1000s, isMonth: false, isYear: true });
                         } else if (yearWidth > 15) {
-                            ticks.push({ x, label: '', is1AD: false, is1000s: true, isMonth: false, isYear: true });
+                            ticks.push({ x, label: '', is1AD: false, is1000s: is1000s, isMonth: false, isYear: true });
                         }
 
                         if (yearWidth > 200) {
@@ -1855,12 +1879,12 @@
 
             for (let y = startY; y <= endY; y += stepYrs) {
                 if (y === 0 && stepYrs === 1) continue;
-                let labelYear = y === 0 ? 1 : y;
+                let labelYear = y === 0 ? 1 : y; // Forces the 0th tick to act as the 1 AD marker when zoomed out
 
                 let days = labelYear >= 1 ? (labelYear - 1) * DAYS_IN_YEAR : labelYear * DAYS_IN_YEAR;
                 let x = offsetX + (days * scale);
                 
-                let is1AD = labelYear === 1 && y === 1;
+                let is1AD = (labelYear === 1); 
                 let is1000s = Math.abs(labelYear) % 1000 === 0 && labelYear !== 0;
                 let label = labelYear > 0 ? `${labelYear} AD` : `${Math.abs(labelYear)} BC`;
                 
@@ -1897,7 +1921,7 @@
                         let y = worldToYear(d);
                         if (y !== 0) {
                             let dayOfYear = d - yearToWorld(Math.trunc(y));
-                            if (dayOfYear > 0 && dayOfYear % 30.4375 > 0.9 && dayOfYear % 30.4375 < 1.1) continue; // avoid month overlaps
+                            if (dayOfYear > 0 && dayOfYear % 30.4375 > 0.9 && dayOfYear % 30.4375 < 1.1) continue;
                             
                             let dateStr = worldToDateStr(d, true);
                             let day = dateStr.split(" ")[1].replace(",", "");
