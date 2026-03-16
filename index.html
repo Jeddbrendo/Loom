@@ -1482,7 +1482,10 @@
             }
             selector.value = currentProjectId;
         }
-
+        function saveProjectsList() {
+            localStorage.setItem('chronos_projects_list', JSON.stringify(projectsList));
+            loadProjectsList();
+        }
         function switchProject() {
             currentProjectId = document.getElementById('project-selector').value;
             // Save selection so it survives page reloads
@@ -1492,25 +1495,32 @@
 
         function newProject() {
             const name = prompt("Enter a name for the new project:");
-            // Added strict validation to prevent blank space names
             if (name && name.trim() !== "") {
+                // Close any active event details or editors before creating
+                closePanels(); 
+                
                 const id = 'proj_' + Date.now();
                 projectsList[id] = name.trim();
                 currentProjectId = id;
-                // Save selection so it survives page reloads
+                
                 localStorage.setItem('chronos_active_project', currentProjectId);
                 saveProjectsList();
+                
+                // NEW FIX: Force the dropdown menu to visually update and select the new project
+                loadProjectsList();
+                
+                // Initialize clean slate
                 events = [];
                 lanesTree = [
                     { id: generateLaneId(), name: 'Subject', collapsed: false, color: '#818cf8', icon: 'layers', children: [
                         { id: generateLaneId(), name: 'Sub Topic', collapsed: false, color: '#818cf8', children: [] }
                     ]}
                 ];
+                
                 saveData();
                 loadData(); 
             }
         }
-
         function renameProject() {
             // Get the current name of the active project
             const currentName = projectsList[currentProjectId];
@@ -1523,7 +1533,7 @@
                projectsList[currentProjectId] = newName.trim();
                saveProjectsList(); // This automatically saves to local storage and rebuilds the <select> dropdown
             }
-        }
+        }    
         function deleteProject() {
             if (Object.keys(projectsList).length <= 1) {
                 alert("You must have at least one project. Cannot delete the last remaining project.");
@@ -1532,6 +1542,9 @@
             
             const currentName = projectsList[currentProjectId];
             if (confirm(`Are you sure you want to delete the project "${currentName}"? All events and lanes will be permanently lost.`)) {
+                // Close panels to prevent Ghost events from lingering on screen
+                closePanels(); 
+                
                 // Remove the project data from local storage
                 localStorage.removeItem(`chronos_events_${currentProjectId}`);
                 localStorage.removeItem(`chronos_lanes_${currentProjectId}`);
@@ -1539,15 +1552,18 @@
                 // Remove from the master project list
                 delete projectsList[currentProjectId];
                 
-                // Fall back to the first available project
+                // Fall back to the first available project safely
                 currentProjectId = Object.keys(projectsList)[0];
                 localStorage.setItem('chronos_active_project', currentProjectId);
                 
                 saveProjectsList();
+                
+                // NEW FIX: Force the dropdown menu to visually remove the deleted project
+                loadProjectsList();
+                
                 loadData();
             }
         }
-
         function exportProject() {
             const dataToExport = {
                 version: 2,
