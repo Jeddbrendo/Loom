@@ -9,8 +9,16 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.svg">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
+    
+    <!-- Pickr Classic Theme CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Pickr JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+    
     <style>
         :root {
             /* Active dynamically mapped theme vars */
@@ -118,10 +126,6 @@
         }
         select option, select optgroup { background-color: var(--app-bg) !important; color: var(--app-text-primary) !important; }
 
-        input[type="color"] { border: none; border-radius: 6px; overflow: hidden; cursor: pointer; height: 36px; padding: 0; width: 100%; border: 1px solid var(--app-border); }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
-        
         input[type="range"] { accent-color: var(--user-accent); cursor: pointer; }
         input[type="checkbox"] { accent-color: var(--user-accent); width: 16px; height: 16px; cursor: pointer; }
 
@@ -134,6 +138,59 @@
             border: 2px solid var(--app-border); transition: transform 0.1s ease;
         }
         .recent-color-swatch:hover { transform: scale(1.15); border-color: var(--app-text-primary); }
+
+        /* Custom Native Pickers for Settings Panel */
+        input[type="color"] { 
+            -webkit-appearance: none; 
+            -moz-appearance: none;
+            appearance: none;
+            background: transparent;
+            border: 2px solid var(--app-border) !important; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            cursor: pointer; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { 
+            padding: 0; 
+            border: none;
+        }
+        input[type="color"]::-webkit-color-swatch { 
+            border: none !important; 
+            border-radius: 50%; 
+        }
+        input[type="color"]::-moz-color-swatch { 
+            border: none !important; 
+            border-radius: 50%; 
+        }
+        
+        #settings-modal input[type="color"] { width: 32px !important; height: 32px !important; margin: 0 auto; display: block; }
+        #settings-modal #set-tc-1, #settings-modal #set-tc-2, #settings-modal #set-tc-3, #settings-modal #set-tc-4, #settings-modal #set-tc-5 { width: 40px !important; height: 40px !important; margin: 0; }
+
+        /* Pickr UI Overrides for Circular Buttons & Theme Matching */
+        .pickr .pcr-button {
+            width: 52px !important; height: 52px !important; border-radius: 50% !important;
+            border: 2px solid var(--app-border) !important; 
+            overflow: hidden !important; 
+            background: transparent !important;
+        }
+        .pickr .pcr-button::before, .pickr .pcr-button::after { 
+            border-radius: 50% !important; 
+            box-shadow: none !important; 
+            border: none !important; 
+        }
+        .pickr .pcr-button::before {
+            background: transparent !important; 
+        }
+
+        .pcr-app .pcr-interaction input {
+            background: var(--app-bg) !important; color: var(--app-text-primary) !important; border: 1px solid var(--app-border) !important;
+        }
+        .pcr-app .pcr-interaction .pcr-save { background: var(--user-accent) !important; }
+        .pcr-app .pcr-swatches > button { border-radius: 50% !important; }
+        .pcr-app .pcr-swatches > button::before, .pcr-app .pcr-swatches > button::after { border-radius: 50% !important; }
 
         .bg-indigo-600 { background-color: var(--user-accent) !important; }
         .hover\:bg-indigo-500:hover { filter: brightness(1.2); }
@@ -254,6 +311,7 @@
         </div>
     </div>
 
+    <!-- EDITOR PANEL -->
     <div id="editor-panel" class="ui-panel shadow-2xl">
         <div class="flex justify-between items-center mb-6">
             <h2 id="editor-title" class="text-xl sm:text-2xl font-black tracking-tight app-text-primary">New Entry</h2>
@@ -343,16 +401,23 @@
                             <option value="star">Star</option>
                         </select>
                     </div>
-                    <div class="w-20 shrink-0">
+                    <div class="w-20 shrink-0 flex flex-col items-start">
                         <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Color</label>
-                        <input type="color" id="edit-color" class="w-full h-[52px]">
+                        <div id="edit-color-picker"></div>
+                        <input type="hidden" id="edit-color">
                     </div>
                 </div>
             </div>
             
-            <div>
-                <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Recent Colors</label>
-                <div id="editor-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
+            <div class="grid grid-cols-2 gap-4 mt-2">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Recent Colors</label>
+                    <div id="editor-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Theme Colors</label>
+                    <div id="editor-theme-colors" class="flex gap-2 mt-1 flex-wrap"></div>
+                </div>
             </div>
 
             <!-- Dynamic Multi-Image Field -->
@@ -514,6 +579,16 @@
                     <div class="text-sm font-bold app-text-primary">11. Sub Lane Opacity</div>
                     <div><input type="range" id="s-d-opSub" min="0.0" max="1.0" step="0.05" class="w-full"></div>
                     <div><input type="range" id="s-l-opSub" min="0.0" max="1.0" step="0.05" class="w-full"></div>
+
+                    <!-- Theme Colors -->
+                    <div class="text-sm font-bold app-text-primary mt-6 col-span-3 app-border-t pt-4">12. Theme Colors (Quick Access)</div>
+                    <div class="col-span-3 flex gap-4 mt-2 justify-start">
+                        <input type="color" id="set-tc-1" class="w-10 h-10 rounded-full cursor-pointer">
+                        <input type="color" id="set-tc-2" class="w-10 h-10 rounded-full cursor-pointer">
+                        <input type="color" id="set-tc-3" class="w-10 h-10 rounded-full cursor-pointer">
+                        <input type="color" id="set-tc-4" class="w-10 h-10 rounded-full cursor-pointer">
+                        <input type="color" id="set-tc-5" class="w-10 h-10 rounded-full cursor-pointer">
+                    </div>
                 </div>
             </div>
 
@@ -554,12 +629,19 @@
             <div class="space-y-5 mb-8">
                 <div>
                     <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Accent Color</label>
-                    <input type="color" id="lane-style-color" class="w-full h-12">
+                    <div id="lane-color-picker"></div>
+                    <input type="hidden" id="lane-style-color">
                 </div>
                 
-                <div>
-                    <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Recent Colors</label>
-                    <div id="lane-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Recent Colors</label>
+                        <div id="lane-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Theme Colors</label>
+                        <div id="lane-theme-colors" class="flex gap-2 mt-1 flex-wrap"></div>
+                    </div>
                 </div>
                 
                 <div id="lane-style-icon-container">
@@ -592,6 +674,7 @@
             </div>
         </div>
     </div>
+    
     <!-- DATE CALCULATOR MODAL -->
     <div id="calculator-modal" class="fixed inset-0 bg-black/80 z-[300] flex-col items-center justify-center hidden opacity-0 transition-opacity">
         <div class="app-card w-full max-w-md max-h-[85vh] overflow-y-auto flex flex-col rounded-2xl p-6 sm:p-8 relative m-4 shadow-2xl scrollbar-hide">
@@ -604,13 +687,11 @@
                 <!-- Start Date -->
                 <div>
                     <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Start Era & Date</label>
-                    <!-- New AD/BC Toggle -->
                     <div class="flex p-1 app-root-lane rounded-xl app-border mb-3">
-                        <button id="calc-era-ad" onclick="setCalcEra('AD')" class="flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active">AD (CE)</button>
                         <button id="calc-era-bc" onclick="setCalcEra('BC')" class="flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive">BC (BCE)</button>
+                        <button id="calc-era-ad" onclick="setCalcEra('AD')" class="flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active">AD (CE)</button>
                     </div>
-                    
-                    <!-- Widened Date Inputs -->
+                
                     <div class="flex gap-2">
                         <input type="number" id="calc-start-year" placeholder="Year" class="w-1/3 p-3.5 text-sm outline-none font-bold text-center" value="2024">
                         <select id="calc-start-month" class="w-1/3 p-3.5 text-sm outline-none font-bold cursor-pointer px-1">
@@ -619,7 +700,6 @@
                         <input type="number" id="calc-start-day" placeholder="Day" class="w-1/3 p-3.5 text-sm outline-none font-bold text-center" min="1" max="31" value="1">
                     </div>
                 </div>
-
 
                 <!-- Operation -->
                 <div>
@@ -654,6 +734,9 @@
     </div>
 
     <script>
+        let editPickr = null;
+        let lanePickr = null;
+
         // Modal functions for Hebrew details
         function openHebrewInfoModal() {
             const modal = document.getElementById('hebrew-info-modal');
@@ -669,10 +752,10 @@
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
-        // 11 settings per theme as requested + font + accent
         const defaultSettings = {
             font: "'Inter', system-ui, sans-serif",
             accent: '#4f46e5',
+            themeColors: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'],
             dark: { 
                 bg: '#050507', 
                 rootLaneBg: '#111116',
@@ -709,6 +792,7 @@
                 if (parsed && typeof parsed === 'object') {
                     if (parsed.font) userSettings.font = parsed.font;
                     if (parsed.accent) userSettings.accent = parsed.accent;
+                    if (parsed.themeColors) userSettings.themeColors = parsed.themeColors;
                     if (parsed.dark) userSettings.dark = { ...userSettings.dark, ...parsed.dark };
                     if (parsed.light) userSettings.light = { ...userSettings.light, ...parsed.light };
                 }
@@ -739,21 +823,63 @@
         let recentColors = [];
         try {
             const savedColors = localStorage.getItem('chronos_recent_colors');
-            if (savedColors) recentColors = JSON.parse(savedColors);
+            if (savedColors) recentColors = JSON.parse(savedColors).slice(0, 5);
         } catch(e) {}
+        
         if(recentColors.length === 0) recentColors = ['#f472b6', '#fbbf24', '#34d399', '#818cf8', '#a78bfa'];
 
         function addRecentColor(hex) {
             if(!hex) return;
             recentColors = recentColors.filter(c => c.toLowerCase() !== hex.toLowerCase());
             recentColors.unshift(hex);
-            if(recentColors.length > 8) recentColors.pop();
+            recentColors = recentColors.slice(0, 5);
             localStorage.setItem('chronos_recent_colors', JSON.stringify(recentColors));
             renderRecentColors();
         }
 
+        // --- Pickr Initializers & Color Renders ---
+        function initPickrs() {
+            if (!window.Pickr) return;
+            const pickrConfig = {
+                theme: 'classic',
+                swatches: userSettings.themeColors || ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'],
+                components: {
+                    preview: true, opacity: false, hue: true,
+                    interaction: { hex: true, input: true, clear: false, save: true }
+                }
+            };
+            
+            editPickr = Pickr.create({ el: '#edit-color-picker', default: '#888888', ...pickrConfig });
+            editPickr.on('save', (c) => { document.getElementById('edit-color').value = c.toHEXA().toString(); editPickr.hide(); })
+                     .on('change', (c) => { document.getElementById('edit-color').value = c.toHEXA().toString(); });
+                     
+            lanePickr = Pickr.create({ el: '#lane-color-picker', default: '#888888', ...pickrConfig });
+            lanePickr.on('save', (c) => { document.getElementById('lane-style-color').value = c.toHEXA().toString(); lanePickr.hide(); })
+                     .on('change', (c) => { document.getElementById('lane-style-color').value = c.toHEXA().toString(); });
+        }
+
+        function renderThemeColors() {
+            const renderTo = (containerId, inputId, pickrInst) => {
+                const cont = document.getElementById(containerId);
+                if(!cont) return;
+                cont.innerHTML = '';
+                (userSettings.themeColors || []).forEach(c => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'recent-color-swatch';
+                    bubble.style.backgroundColor = c;
+                    bubble.onclick = () => { 
+                        document.getElementById(inputId).value = c;
+                        if(pickrInst) pickrInst.setColor(c);
+                    };
+                    cont.appendChild(bubble);
+                });
+            };
+            renderTo('editor-theme-colors', 'edit-color', editPickr);
+            renderTo('lane-theme-colors', 'lane-style-color', lanePickr);
+        }
+
         function renderRecentColors() {
-            const renderTo = (containerId, inputId) => {
+            const renderTo = (containerId, inputId, pickrInst) => {
                 const cont = document.getElementById(containerId);
                 if(!cont) return;
                 cont.innerHTML = '';
@@ -761,12 +887,15 @@
                     const bubble = document.createElement('div');
                     bubble.className = 'recent-color-swatch';
                     bubble.style.backgroundColor = c;
-                    bubble.onclick = () => { document.getElementById(inputId).value = c; };
+                    bubble.onclick = () => { 
+                        document.getElementById(inputId).value = c;
+                        if(pickrInst) pickrInst.setColor(c);
+                    };
                     cont.appendChild(bubble);
                 });
             };
-            renderTo('editor-recent-colors', 'edit-color');
-            renderTo('lane-recent-colors', 'lane-style-color');
+            renderTo('editor-recent-colors', 'edit-color', editPickr);
+            renderTo('lane-recent-colors', 'lane-style-color', lanePickr);
         }
 
         function openSettings() {
@@ -792,6 +921,13 @@
                 if (el) el.value = userSettings[m[2]][m[1]];
             });
             
+            if(userSettings.themeColors) {
+                for (let i = 0; i < 5; i++) {
+                    const el = document.getElementById(`set-tc-${i+1}`);
+                    if (el) el.value = userSettings.themeColors[i] || '#ffffff';
+                }
+            }
+
             const modal = document.getElementById('settings-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -825,8 +961,25 @@
             userSettings.dark = extract('s-d');
             userSettings.light = extract('s-l');
             
+            userSettings.themeColors = [];
+            for (let i = 0; i < 5; i++) {
+                const el = document.getElementById(`set-tc-${i+1}`);
+                if (el) userSettings.themeColors.push(el.value);
+            }
+            
             localStorage.setItem('chronos_app_settings', JSON.stringify(userSettings));
             applyCSSVariables();
+            renderThemeColors();
+            
+            // Re-initialize Pickr to update the new swatches inside the popup
+            if(editPickr) {
+                editPickr.destroyAndRemove();
+                lanePickr.destroyAndRemove();
+                document.getElementById('edit-color').insertAdjacentHTML('beforebegin', '<div id="edit-color-picker"></div>');
+                document.getElementById('lane-style-color').insertAdjacentHTML('beforebegin', '<div id="lane-color-picker"></div>');
+                initPickrs();
+            }
+
             closeSettings();
             draw();
         }
@@ -836,6 +989,16 @@
                 userSettings = JSON.parse(JSON.stringify(defaultSettings)); 
                 localStorage.setItem('chronos_app_settings', JSON.stringify(userSettings));
                 applyCSSVariables();
+                renderThemeColors();
+                
+                if(editPickr) {
+                    editPickr.destroyAndRemove();
+                    lanePickr.destroyAndRemove();
+                    document.getElementById('edit-color').insertAdjacentHTML('beforebegin', '<div id="edit-color-picker"></div>');
+                    document.getElementById('lane-style-color').insertAdjacentHTML('beforebegin', '<div id="lane-color-picker"></div>');
+                    initPickrs();
+                }
+
                 closeSettings();
                 draw();
             }
@@ -1131,6 +1294,7 @@
             let r = 0, g = 0, b = 0;
             if (hex.length === 4) { r = parseInt(hex[1]+hex[1],16); g = parseInt(hex[2]+hex[2],16); b = parseInt(hex[3]+hex[3],16); }
             else if (hex.length === 7) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); }
+            else if (hex.length === 9) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); }
             return `rgba(${r},${g},${b},${alpha})`;
         }
 
@@ -1198,7 +1362,10 @@
             activeStyleNode = node;
             activeStyleIsRoot = isRoot;
             
-            document.getElementById('lane-style-color').value = node.color || (isRoot ? '#818cf8' : '#888888');
+            const c = node.color || (isRoot ? '#818cf8' : '#888888');
+            document.getElementById('lane-style-color').value = c;
+            if (lanePickr) lanePickr.setColor(c);
+            
             renderRecentColors();
 
             const iconContainer = document.getElementById('lane-style-icon-container');
@@ -1545,14 +1712,17 @@
             }
             selector.value = currentProjectId;
         }
+
         function saveProjectsList() {
             localStorage.setItem('chronos_projects_list', JSON.stringify(projectsList));
             loadProjectsList();
         }
+
         function switchProject() {
             currentProjectId = document.getElementById('project-selector').value;
             // Save selection so it survives page reloads
             localStorage.setItem('chronos_active_project', currentProjectId); 
+            closePanels();
             loadData();
         }
 
@@ -1584,11 +1754,12 @@
                 loadData(); 
             }
         }
+        
         function renameProject() {
             // Get the current name of the active project
             const currentName = projectsList[currentProjectId];
     
-            // Prompt the user for a new name (using standard browser prompt to match your newProject function)
+            // Prompt the user for a new name
             const newName = prompt("Enter a new name for this project:", currentName);
     
             // If they typed something valid and it's different from the old name
@@ -1596,7 +1767,8 @@
                projectsList[currentProjectId] = newName.trim();
                saveProjectsList(); // This automatically saves to local storage and rebuilds the <select> dropdown
             }
-        }    
+        }
+        
         function deleteProject() {
             if (Object.keys(projectsList).length <= 1) {
                 alert("You must have at least one project. Cannot delete the last remaining project.");
@@ -1627,6 +1799,7 @@
                 loadData();
             }
         }
+        
         function exportProject() {
             const dataToExport = {
                 version: 2,
@@ -1695,6 +1868,7 @@
             reader.readAsText(file);
             e.target.value = '';
         }
+        
         function openImportModal() {
             const list = document.getElementById('import-list');
             list.innerHTML = importBuffer.length === 0 ? '<p class="app-text-tertiary text-center py-4">No events found.</p>' : '';
@@ -1832,11 +2006,11 @@
             ctx.scale(devicePixelRatio, devicePixelRatio);
             draw();
         }
+        
         // --- DATE CALCULATOR LOGIC ---
         let currentCalcOp = 'add';
-        let currentCalcEra = 'AD'; // Add this line
+        let currentCalcEra = 'AD'; 
 
-        // Add this new function to handle the styling of the era toggle
         function setCalcEra(era) {
             currentCalcEra = era;
             const bcBtn = document.getElementById('calc-era-bc');
@@ -1849,6 +2023,7 @@
                 adBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive";
             }
         }
+        
         function openCalculator() {
             const modal = document.getElementById('calculator-modal');
             modal.classList.remove('hidden');
@@ -1877,7 +2052,6 @@
         }
 
         function getDaysInMonth(year, month) {
-            // Month is 1-12. Adjusts for missing Year 0 astronomically.
             const m = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
             let astroYear = year > 0 ? year : year + 1; 
             let isLeap = (astroYear % 4 === 0 && (astroYear % 100 !== 0 || astroYear % 400 === 0));
@@ -1900,14 +2074,11 @@
 
             let mult = currentCalcOp === 'add' ? 1 : -1;
 
-            // 1. Calculate Years
             let startY = y;
             y += (dy * mult);
-            // Handle Year 0 gap (There is no Year 0 between 1 BC and 1 AD)
             if (startY > 0 && y <= 0) y -= 1;
             else if (startY < 0 && y >= 0) y += 1;
 
-            // 2. Calculate Months
             m += (dm * mult);
             while (m > 12) {
                 m -= 12;
@@ -1920,7 +2091,6 @@
                 if (y === 0) y = -1;
             }
 
-            // 3. Calculate Days
             d += (dd * mult);
             
             if (mult === 1) {
@@ -1945,7 +2115,6 @@
                 }
             }
 
-            // Formatting final output
             const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             let outEra = y >= 1 ? "AD" : "BCE";
             let outY = Math.abs(y);
@@ -1958,33 +2127,21 @@
             const TROPICAL_YEAR = 365.24219;
             const SYNODIC_MONTH = 29.530588853;
             
-            // Base JDNs for J2000.0 (Jan 1, 2000 12:00 TT = 2451545.0)
-            const BASE_EQUINOX_JDN = 2451623.8; // Vernal Equinox 2000: March 20, 2000 ~07:35 UT
-            const BASE_NEW_MOON_JDN = 2451550.26; // Known New Moon: Jan 6, 2000 ~18:14 UT
+            const BASE_EQUINOX_JDN = 2451623.8; 
+            const BASE_NEW_MOON_JDN = 2451550.26; 
             
-            const VISIBLE_CRESCENT_OFFSET = 1.5; // Approx days after dark moon for crescent visibility at sunset
-            const JDN_GREGORIAN_EPOCH = 1721425.5; // Jan 1, 1 AD
+            const VISIBLE_CRESCENT_OFFSET = 1.5; 
+            const JDN_GREGORIAN_EPOCH = 1721425.5; 
 
             function getVernalEquinoxJDN(gregorianYear) {
                 return BASE_EQUINOX_JDN + (gregorianYear - 2000) * TROPICAL_YEAR;
             }
 
-            // O(1) Mathematical formula to find Nisan 1 for a given mathematical gregorian year
             function getNisan1JDN(gregorianYear) {
                 const eqJDN = getVernalEquinoxJDN(gregorianYear);
-                
-                // Rule: Nisan 14 MUST fall AFTER the Vernal Equinox.
-                // Nisan 1 + 13 > eqJDN  =>  Nisan 1 > eqJDN - 13
-                // The astronomical new moon (NM) + offset determines Nisan 1.
-                // NM + offset > eqJDN - 13  =>  NM > eqJDN - 13 - offset
                 const targetNM = eqJDN - 13 - VISIBLE_CRESCENT_OFFSET;
-                
-                // Calculate which lunation this target corresponds to
                 const n = Math.ceil((targetNM - BASE_NEW_MOON_JDN) / SYNODIC_MONTH);
-                
                 const trueNM = BASE_NEW_MOON_JDN + n * SYNODIC_MONTH;
-                
-                // Nisan 1 begins at sunset of the day the crescent is visible.
                 const nisan1 = Math.floor(trueNM + VISIBLE_CRESCENT_OFFSET);
                 
                 return {
@@ -2003,7 +2160,7 @@
                 const current = getNisan1JDN(gregorianYear);
                 const next = getNisan1JDN(gregorianYear + 1);
                 
-                const numMonths = next.lunationIndex - current.lunationIndex; // Will naturally be 12 or 13
+                const numMonths = next.lunationIndex - current.lunationIndex; 
                 const months = [];
                 
                 for (let i = 0; i < numMonths; i++) {
@@ -2026,7 +2183,6 @@
         })();
         // --- END BIBLICAL OBSERVATIONAL CALENDAR IMPLEMENTATION ---
 
-        // Massive step arrays to prevent infinite loops at extreme zoom-outs
         const MASTER_YEAR_STEPS = [
             10000000000, 5000000000, 2500000000, 1000000000,
             500000000, 250000000, 100000000, 50000000, 25000000, 10000000,
@@ -2848,7 +3004,11 @@
             if (!document.getElementById('edit-id').value) {
                 const laneId = document.getElementById('edit-lane').value;
                 const path = findLanePath(laneId);
-                if (path && path.length > 0) document.getElementById('edit-color').value = path[path.length-1].color || '#888888';
+                if (path && path.length > 0) {
+                    const c = path[path.length-1].color || '#888888';
+                    document.getElementById('edit-color').value = c;
+                    if(editPickr) editPickr.setColor(c);
+                }
             }
         }
 
@@ -2864,6 +3024,9 @@
             document.getElementById('edit-icon').value = 'book-open';
             document.getElementById('edit-era').value = 'AD';
             document.getElementById('edit-era-end').value = 'AD';
+            
+            document.getElementById('edit-color').value = '#888888';
+            if (editPickr) editPickr.setColor('#888888');
             
             document.getElementById('edit-sources-container').innerHTML = '';
             addSourceInput();
@@ -2912,9 +3075,12 @@
             document.getElementById('edit-lane').value = ev.lane;
             document.getElementById('edit-icon').value = ev.icon || 'book-open';
             document.getElementById('edit-desc').value = ev.desc || "";
-            document.getElementById('edit-color').value = ev.color || '#888888';
             document.getElementById('edit-has-map').checked = !!ev.hasMap;
             document.getElementById('edit-map-url').value = ev.mapUrl || "";
+            
+            const c = ev.color || '#888888';
+            document.getElementById('edit-color').value = c;
+            if (editPickr) editPickr.setColor(c);
             
             toggleMapInput();
             
@@ -3146,6 +3312,10 @@
         loadProjectsList();
         resize();
         loadData();
+
+        // Initializing the new Color pickers and Theme colors!
+        initPickrs();
+        renderThemeColors();
 
         const themeBtn = document.getElementById('theme-toggle-btn');
         if (themeBtn) { themeBtn.innerHTML = `<i data-lucide="${isLightMode ? 'moon' : 'sun'}" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>`; }
