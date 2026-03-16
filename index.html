@@ -1043,7 +1043,7 @@
             let remDays = days - (y * DAYS_IN_YEAR);
             if (remDays < 0) remDays += DAYS_IN_YEAR;
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const mLength = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            const mLength = [31, 28.2425, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
             let mo = 0;
             while (mo < 12 && remDays >= mLength[mo]) {
                 remDays -= mLength[mo];
@@ -1812,7 +1812,7 @@
                     const yearDays = BiblicalObservationalCalendar.getBiblicalYearDays(y);
                     const yearWidth = yearDays * scale;
 
-                    // FIX: Check if the ENTIRE year is off-screen
+                    // Check if the ENTIRE year is off-screen
                     if (x + yearWidth < -50 || x > width + 50) continue;
 
                     if (stepYrs > 1) {
@@ -1862,6 +1862,7 @@
         function getTicks() {
             const ticks = [];
             const yearPx = DAYS_IN_YEAR * scale;
+            const monthPx = 30.4375 * scale;
             const dayPx = 1 * scale;
 
             let stepYrs = MASTER_YEAR_STEPS[0];
@@ -1914,23 +1915,25 @@
             // Uniform visibility check based on the shortest month (February ~ 28.25 days)
             // A 3-letter month name needs space, requiring at least ~45px for the shortest month.
             const showMonthText = (28.2425 * scale) > 45; 
+            const showDayText = dayPx > 40;
 
-            if (stepYrs === 1 && (30.4375 * scale) > 10) {
+            if (stepYrs === 1 && (monthPx > 10 || dayPx > 15)) {
                 const mLength = [31, 28.2425, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
                 const mNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
                 for (let y = startY; y <= endY; y++) {
                     if (y === 0) continue;
                     let currentDays = y > 0 ? (y - 1) * DAYS_IN_YEAR : y * DAYS_IN_YEAR;
+                    
                     for (let m = 0; m < 12; m++) {
                         let monthX = offsetX + (currentDays * scale);
                         
-                        // Draw the tick line (skip m=0 because it overlaps with the year line)
-                        if (m > 0 && monthX > -50 && monthX < width + 50) { 
+                        // Draw Month Tick (skip Jan 1 as it's the Year tick)
+                        if (m > 0 && monthPx > 10 && monthX > -50 && monthX < width + 50) { 
                             ticks.push({ x: monthX, label: "", is1AD: false, is1000s: false, isMonth: true, isYear: false });
                         }
                         
-                        // Center the month text and draw if threshold is met uniformly
+                        // Center the month text
                         if (showMonthText) {
                             let midMonthDays = currentDays + (mLength[m] / 2);
                             let midX = offsetX + (midMonthDays * scale);
@@ -1938,30 +1941,22 @@
                                 ticks.push({ x: midX, label: mNames[m], is1AD: false, is1000s: false, isMonthText: true, isYear: false });
                             }
                         }
+
+                        // Draw Day Ticks precisely relative to the month boundary
+                        if (dayPx > 15) {
+                            let daysInMonth = Math.floor(mLength[m]);
+                            // Start at 1 to skip the 1st of the month, which is already marked by the Year/Month tick
+                            for (let d = 1; d < daysInMonth; d++) {
+                                let dayX = offsetX + ((currentDays + d) * scale);
+                                if (dayX > -50 && dayX < width + 50) {
+                                    ticks.push({ x: dayX, label: showDayText ? (d + 1).toString() : "", is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true });
+                                }
+                            }
+                        }
                         
                         currentDays += mLength[m];
                     }
                 }
-            }
-            
-            if (dayPx > 15 && stepYrs === 1) {
-                 const showDayText = dayPx > 40;
-                 let startD = Math.floor(-offsetX/scale);
-                 let endD = Math.ceil((width-offsetX)/scale);
-                 for (let d = startD; d <= endD; d++) {
-                    let x = offsetX + d * scale;
-                    if(x > -50 && x < width + 50) {
-                        let y = worldToYear(d);
-                        if (y !== 0) {
-                            let dayOfYear = d - yearToWorld(Math.trunc(y));
-                            if (dayOfYear > 0 && dayOfYear % 30.4375 > 0.9 && dayOfYear % 30.4375 < 1.1) continue;
-                            
-                            let dateStr = worldToDateStr(d, true);
-                            let day = dateStr.split(" ")[1].replace(",", "");
-                            ticks.push({x, label: showDayText ? day : "", is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true});
-                        }
-                    }
-                 }
             }
 
             return ticks;
