@@ -1043,7 +1043,7 @@
             let remDays = days - (y * DAYS_IN_YEAR);
             if (remDays < 0) remDays += DAYS_IN_YEAR;
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const mLength = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            const mLength = [31, 28.2425, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
             let mo = 0;
             while (mo < 12 && remDays >= mLength[mo]) {
                 remDays -= mLength[mo];
@@ -1798,7 +1798,6 @@
 
                 if (endBiblicalYear - startBiblicalYear > 100000000000) return ticks;
 
-                // Uniform visibility check based on the shortest month (~29 days)
                 const showMonthText = (29 * scale) > 45;
                 const showDayText = dayPx > 40;
 
@@ -1850,15 +1849,12 @@
                                     }
                                 }
                                 
-                                // Draw Day Ticks
                                 if (dayPx > 15) {
                                     for (let d = 0; d < months[m].length; d++) {
                                         let dayX = offsetX + (monthWorldDays + d) * scale;
                                         if (dayX >= -50 && dayX <= width + 50) {
-                                            // Provide label only if showing day text. 
-                                            // The text is rendered cleanly at a different Y offset, preventing clashing.
                                             let dayLabel = showDayText ? (d + 1).toString() : "";
-                                            ticks.push({ x: dayX, label: dayLabel, is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true });
+                                            ticks.push({ x: dayX, label: dayLabel, is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true, isFirstDay: (d === 0) });
                                         }
                                     }
                                 }
@@ -1950,7 +1946,7 @@
                                 let dayX = offsetX + ((currentDays + d) * scale);
                                 if (dayX > -50 && dayX < width + 50) {
                                     let dayLabel = showDayText ? (d + 1).toString() : "";
-                                    ticks.push({ x: dayX, label: dayLabel, is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true });
+                                    ticks.push({ x: dayX, label: dayLabel, is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true, isFirstDay: (d === 0) });
                                 }
                             }
                         }
@@ -1970,21 +1966,21 @@
                 if (tck.isMonthText) {
                     ctx.fillStyle = t.textSecondary; 
                     ctx.font = `700 10px ${userSettings.font}`;
-                    ctx.fillText(tck.label, tck.x, baseRulerY + 34); // Render centered month text in its own horizontal band
+                    ctx.fillText(tck.label, tck.x, baseRulerY + 34); 
                 } else if (tck.is1AD) {
                     ctx.strokeStyle = t.textPrimary; 
                     ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 24); ctx.stroke();
                     ctx.fillStyle = t.textPrimary; 
                     ctx.font = `900 14px ${userSettings.font}`; 
-                    ctx.fillText(tck.label, tck.x, baseRulerY + 48); // Drop special year marker down
+                    ctx.fillText(tck.label, tck.x, baseRulerY + 48); 
                 } else if (tck.is1000s) {
                     ctx.strokeStyle = t.textSecondary; 
                     ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 18); ctx.stroke();
                     ctx.fillStyle = t.textSecondary; 
                     ctx.font = `bold 12px ${userSettings.font}`; 
-                    ctx.fillText(tck.label, tck.x, baseRulerY + 46); // Drop bold year markers down
+                    ctx.fillText(tck.label, tck.x, baseRulerY + 46); 
                 } else {
                     ctx.strokeStyle = t.textTertiary; 
                     ctx.lineWidth = 1;
@@ -1993,19 +1989,22 @@
                     if (tck.isMonth) tickLen = 8;
                     if (tck.isDay) tickLen = 5;
                     
-                    // Draw lines only for exact boundary markers
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + tickLen); ctx.stroke();
                     
-                    // Draw labels in specific distinct horizontal lanes to prevent ANY overlap
                     if (tck.label) {
                         if (tck.isDay) {
-                            ctx.fillStyle = t.textTertiary; 
-                            ctx.font = `500 10px ${userSettings.font}`;
-                            ctx.fillText(tck.label, tck.x, baseRulerY + 20); // Days at the very top
+                            if (tck.isFirstDay) {
+                                ctx.fillStyle = t.textPrimary; 
+                                ctx.font = `bold 12px ${userSettings.font}`;
+                            } else {
+                                ctx.fillStyle = t.textTertiary; 
+                                ctx.font = `500 10px ${userSettings.font}`;
+                            }
+                            ctx.fillText(tck.label, tck.x, baseRulerY + 20); 
                         } else if (tck.isYear) {
                             ctx.fillStyle = t.textPrimary; 
                             ctx.font = `600 11px ${userSettings.font}`;
-                            ctx.fillText(tck.label, tck.x, baseRulerY + 46); // Regular years dropped down
+                            ctx.fillText(tck.label, tck.x, baseRulerY + 46); 
                         }
                     }
                 }
