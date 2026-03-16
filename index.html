@@ -224,6 +224,7 @@
                     
                     <div class="flex gap-1 shrink-0">
                         <button onclick="newProject()" title="New Project" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="folder-plus" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
+                        <button onclick="renameProject()" title="Rename Project" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="pencil" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
                         <button onclick="document.getElementById('import-csv-file').click()" title="Import CSV List" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="file-spreadsheet" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
                         <input type="file" id="import-csv-file" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
                         <button onclick="exportProject()" title="Export Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="upload" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
@@ -1666,6 +1667,19 @@
                 ];
                 saveData();
                 loadData(); 
+            }
+        }
+        function renameProject() {
+            // Get the current name of the active project
+            const currentName = projectsList[currentProjectId];
+    
+            // Prompt the user for a new name (using standard browser prompt to match your newProject function)
+            const newName = prompt("Enter a new name for this project:", currentName);
+    
+            // If they typed something valid and it's different from the old name
+            if (newName && newName.trim() !== "" && newName.trim() !== currentName) {
+               projectsList[currentProjectId] = newName.trim();
+               saveProjectsList(); // This automatically saves to local storage and rebuilds the <select> dropdown
             }
         }
 
