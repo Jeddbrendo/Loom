@@ -603,19 +603,23 @@
             <div class="space-y-5">
                 <!-- Start Date -->
                 <div>
-                    <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Start Date</label>
+                    <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Start Era & Date</label>
+                    <!-- New AD/BC Toggle -->
+                    <div class="flex p-1 app-root-lane rounded-xl app-border mb-3">
+                        <button id="calc-era-ad" onclick="setCalcEra('AD')" class="flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active">AD (CE)</button>
+                        <button id="calc-era-bc" onclick="setCalcEra('BC')" class="flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive">BC (BCE)</button>
+                    </div>
+                    
+                    <!-- Widened Date Inputs -->
                     <div class="flex gap-2">
-                        <input type="number" id="calc-start-year" placeholder="Year" class="w-1/3 p-3.5 text-sm outline-none font-bold" value="2024">
-                        <select id="calc-start-era" class="w-1/4 p-3.5 text-sm outline-none font-bold cursor-pointer px-1">
-                            <option value="AD">AD</option>
-                            <option value="BC">BC</option>
-                        </select>
-                        <select id="calc-start-month" class="w-1/4 p-3.5 text-sm outline-none font-bold cursor-pointer px-1">
+                        <input type="number" id="calc-start-year" placeholder="Year" class="w-1/3 p-3.5 text-sm outline-none font-bold text-center" value="2024">
+                        <select id="calc-start-month" class="w-1/3 p-3.5 text-sm outline-none font-bold cursor-pointer px-1">
                             <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
                         </select>
-                        <input type="number" id="calc-start-day" placeholder="Day" class="w-1/4 p-3.5 text-sm outline-none font-bold text-center" min="1" max="31" value="1">
+                        <input type="number" id="calc-start-day" placeholder="Day" class="w-1/3 p-3.5 text-sm outline-none font-bold text-center" min="1" max="31" value="1">
                     </div>
                 </div>
+
 
                 <!-- Operation -->
                 <div>
@@ -1830,7 +1834,21 @@
         }
         // --- DATE CALCULATOR LOGIC ---
         let currentCalcOp = 'add';
+        let currentCalcEra = 'AD'; // Add this line
 
+        // Add this new function to handle the styling of the era toggle
+        function setCalcEra(era) {
+            currentCalcEra = era;
+            const bcBtn = document.getElementById('calc-era-bc');
+            const adBtn = document.getElementById('calc-era-ad');
+            if (era === 'AD') {
+                adBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active";
+                bcBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive";
+            } else {
+                bcBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active";
+                adBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive";
+            }
+        }
         function openCalculator() {
             const modal = document.getElementById('calculator-modal');
             modal.classList.remove('hidden');
@@ -1869,7 +1887,7 @@
 
         function calculateDate() {
             let y = parseInt(document.getElementById('calc-start-year').value) || 1;
-            let era = document.getElementById('calc-start-era').value;
+            let era = currentCalcEra;
             let m = parseInt(document.getElementById('calc-start-month').value) || 1;
             let d = parseInt(document.getElementById('calc-start-day').value) || 1;
             
