@@ -9,16 +9,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon.svg">
     <link rel="icon" type="image/svg+xml" href="icon.svg">
-    
-    <!-- Pickr Classic Theme CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css"/>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Pickr JS Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
-    
     <style>
         :root {
             /* Active dynamically mapped theme vars */
@@ -126,6 +118,10 @@
         }
         select option, select optgroup { background-color: var(--app-bg) !important; color: var(--app-text-primary) !important; }
 
+        input[type="color"] { border: none; border-radius: 6px; overflow: hidden; cursor: pointer; height: 36px; padding: 0; width: 100%; border: 1px solid var(--app-border); }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+        
         input[type="range"] { accent-color: var(--user-accent); cursor: pointer; }
         input[type="checkbox"] { accent-color: var(--user-accent); width: 16px; height: 16px; cursor: pointer; }
 
@@ -138,59 +134,6 @@
             border: 2px solid var(--app-border); transition: transform 0.1s ease;
         }
         .recent-color-swatch:hover { transform: scale(1.15); border-color: var(--app-text-primary); }
-
-        /* Custom Native Pickers for Settings Panel */
-        input[type="color"] { 
-            -webkit-appearance: none; /* Strips native browser styles that cause the white halo */
-            -moz-appearance: none;
-            appearance: none;
-            background: transparent;
-            border: 2px solid var(--app-border) !important; /* 2px to match all other circles */
-            border-radius: 50%; 
-            overflow: hidden; 
-            cursor: pointer; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-        }
-        input[type="color"]::-webkit-color-swatch-wrapper { 
-            padding: 0; 
-            border: none;
-        }
-        input[type="color"]::-webkit-color-swatch { 
-            border: none !important; /* Forces the inner color block to have no stroke */
-            border-radius: 50%; 
-        }
-        input[type="color"]::-moz-color-swatch { 
-            border: none !important; 
-            border-radius: 50%; 
-        }
-        
-        #settings-modal input[type="color"] { width: 32px !important; height: 32px !important; margin: 0 auto; display: block; }
-        #settings-modal #set-tc-1, #settings-modal #set-tc-2, #settings-modal #set-tc-3, #settings-modal #set-tc-4, #settings-modal #set-tc-5 { width: 40px !important; height: 40px !important; margin: 0; }
-
-        /* Pickr UI Overrides for Circular Buttons & Theme Matching */
-        .pickr .pcr-button {
-            width: 52px !important; height: 52px !important; border-radius: 50% !important;
-            border: 2px solid var(--app-border) !important; /
-            overflow: hidden !important; 
-            background: transparent !important;
-        }
-        .pickr .pcr-button::before, .pickr .pcr-button::after { 
-            border-radius: 50% !important; 
-            box-shadow: none !important; /
-            border: none !important; 
-        }
-        .pickr .pcr-button::before {
-            background: transparent !important; 
-        }
-
-        .pcr-app .pcr-interaction input {
-            background: var(--app-bg) !important; color: var(--app-text-primary) !important; border: 1px solid var(--app-border) !important;
-        }
-        .pcr-app .pcr-interaction .pcr-save { background: var(--user-accent) !important; }
-        .pcr-app .pcr-swatches > button { border-radius: 50% !important; }
-        .pcr-app .pcr-swatches > button::before, .pcr-app .pcr-swatches > button::after { border-radius: 50% !important; }
 
         .bg-indigo-600 { background-color: var(--user-accent) !important; }
         .hover\:bg-indigo-500:hover { filter: brightness(1.2); }
@@ -386,23 +329,16 @@
                             <option value="star">Star</option>
                         </select>
                     </div>
-                    <div class="w-20 shrink-0 flex flex-col items-start">
+                    <div class="w-20 shrink-0">
                         <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Color</label>
-                        <div id="edit-color-picker"></div>
-                        <input type="hidden" id="edit-color">
+                        <input type="color" id="edit-color" class="w-full h-[52px]">
                     </div>
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4 mt-2">
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Recent Colors</label>
-                    <div id="editor-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Theme Colors</label>
-                    <div id="editor-theme-colors" class="flex gap-2 mt-1 flex-wrap"></div>
-                </div>
+            <div>
+                <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Recent Colors</label>
+                <div id="editor-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
             </div>
 
             <!-- Dynamic Multi-Image Field -->
@@ -568,16 +504,6 @@
                     <div class="text-sm font-bold app-text-primary">11. Sub Lane Opacity</div>
                     <div><input type="range" id="s-d-opSub" min="0.0" max="1.0" step="0.05" class="w-full"></div>
                     <div><input type="range" id="s-l-opSub" min="0.0" max="1.0" step="0.05" class="w-full"></div>
-
-                    <!-- Theme Colors -->
-                    <div class="text-sm font-bold app-text-primary mt-6 col-span-3 app-border-t pt-4">12. Theme Colors (Quick Access)</div>
-                    <div class="col-span-3 flex gap-4 mt-2 justify-start">
-                        <input type="color" id="set-tc-1" class="w-10 h-10 rounded-full cursor-pointer">
-                        <input type="color" id="set-tc-2" class="w-10 h-10 rounded-full cursor-pointer">
-                        <input type="color" id="set-tc-3" class="w-10 h-10 rounded-full cursor-pointer">
-                        <input type="color" id="set-tc-4" class="w-10 h-10 rounded-full cursor-pointer">
-                        <input type="color" id="set-tc-5" class="w-10 h-10 rounded-full cursor-pointer">
-                    </div>
                 </div>
             </div>
 
@@ -618,19 +544,12 @@
             <div class="space-y-5 mb-8">
                 <div>
                     <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Accent Color</label>
-                    <div id="lane-color-picker"></div>
-                    <input type="hidden" id="lane-style-color">
+                    <input type="color" id="lane-style-color" class="w-full h-12">
                 </div>
                 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Recent Colors</label>
-                        <div id="lane-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Theme Colors</label>
-                        <div id="lane-theme-colors" class="flex gap-2 mt-1 flex-wrap"></div>
-                    </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase app-text-secondary mb-2">Recent Colors</label>
+                    <div id="lane-recent-colors" class="flex gap-2 mt-1 flex-wrap"></div>
                 </div>
                 
                 <div id="lane-style-icon-container">
@@ -665,9 +584,6 @@
     </div>
 
     <script>
-        let editPickr = null;
-        let lanePickr = null;
-
         // Modal functions for Hebrew details
         function openHebrewInfoModal() {
             const modal = document.getElementById('hebrew-info-modal');
@@ -683,10 +599,10 @@
             setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
         }
 
+        // 11 settings per theme as requested + font + accent
         const defaultSettings = {
             font: "'Inter', system-ui, sans-serif",
             accent: '#4f46e5',
-            themeColors: ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'], // Added theme colors
             dark: { 
                 bg: '#050507', 
                 rootLaneBg: '#111116',
@@ -723,7 +639,6 @@
                 if (parsed && typeof parsed === 'object') {
                     if (parsed.font) userSettings.font = parsed.font;
                     if (parsed.accent) userSettings.accent = parsed.accent;
-                    if (parsed.themeColors) userSettings.themeColors = parsed.themeColors;
                     if (parsed.dark) userSettings.dark = { ...userSettings.dark, ...parsed.dark };
                     if (parsed.light) userSettings.light = { ...userSettings.light, ...parsed.light };
                 }
@@ -754,67 +669,21 @@
         let recentColors = [];
         try {
             const savedColors = localStorage.getItem('chronos_recent_colors');
-            if (savedColors) {
-                recentColors = JSON.parse(savedColors).slice(0, 5); // Instantly trim old saves down to 5
-            }
+            if (savedColors) recentColors = JSON.parse(savedColors);
         } catch(e) {}
-        
-        if(recentColors.length === 0) {
-            recentColors = ['#f472b6', '#fbbf24', '#34d399', '#818cf8', '#a78bfa'];
-        }
+        if(recentColors.length === 0) recentColors = ['#f472b6', '#fbbf24', '#34d399', '#818cf8', '#a78bfa'];
 
         function addRecentColor(hex) {
             if(!hex) return;
             recentColors = recentColors.filter(c => c.toLowerCase() !== hex.toLowerCase());
             recentColors.unshift(hex);
-            recentColors = recentColors.slice(0, 5); // Strictly enforce 5 item limit
+            if(recentColors.length > 8) recentColors.pop();
             localStorage.setItem('chronos_recent_colors', JSON.stringify(recentColors));
             renderRecentColors();
         }
 
-        // --- Pickr Initializers & Color Renders ---
-        function initPickrs() {
-            if (!window.Pickr) return;
-            const pickrConfig = {
-                theme: 'classic',
-                swatches: userSettings.themeColors || ['#EF4444', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'],
-                components: {
-                    preview: true, opacity: false, hue: true,
-                    interaction: { hex: true, input: true, clear: false, save: true }
-                }
-            };
-            
-            editPickr = Pickr.create({ el: '#edit-color-picker', default: '#888888', ...pickrConfig });
-            editPickr.on('save', (c) => { document.getElementById('edit-color').value = c.toHEXA().toString(); editPickr.hide(); })
-                     .on('change', (c) => { document.getElementById('edit-color').value = c.toHEXA().toString(); });
-                     
-            lanePickr = Pickr.create({ el: '#lane-color-picker', default: '#888888', ...pickrConfig });
-            lanePickr.on('save', (c) => { document.getElementById('lane-style-color').value = c.toHEXA().toString(); lanePickr.hide(); })
-                     .on('change', (c) => { document.getElementById('lane-style-color').value = c.toHEXA().toString(); });
-        }
-
-        function renderThemeColors() {
-            const renderTo = (containerId, inputId, pickrInst) => {
-                const cont = document.getElementById(containerId);
-                if(!cont) return;
-                cont.innerHTML = '';
-                (userSettings.themeColors || []).forEach(c => {
-                    const bubble = document.createElement('div');
-                    bubble.className = 'recent-color-swatch';
-                    bubble.style.backgroundColor = c;
-                    bubble.onclick = () => { 
-                        document.getElementById(inputId).value = c;
-                        if(pickrInst) pickrInst.setColor(c);
-                    };
-                    cont.appendChild(bubble);
-                });
-            };
-            renderTo('editor-theme-colors', 'edit-color', editPickr);
-            renderTo('lane-theme-colors', 'lane-style-color', lanePickr);
-        }
-
         function renderRecentColors() {
-            const renderTo = (containerId, inputId, pickrInst) => {
+            const renderTo = (containerId, inputId) => {
                 const cont = document.getElementById(containerId);
                 if(!cont) return;
                 cont.innerHTML = '';
@@ -822,15 +691,12 @@
                     const bubble = document.createElement('div');
                     bubble.className = 'recent-color-swatch';
                     bubble.style.backgroundColor = c;
-                    bubble.onclick = () => { 
-                        document.getElementById(inputId).value = c;
-                        if(pickrInst) pickrInst.setColor(c);
-                    };
+                    bubble.onclick = () => { document.getElementById(inputId).value = c; };
                     cont.appendChild(bubble);
                 });
             };
-            renderTo('editor-recent-colors', 'edit-color', editPickr);
-            renderTo('lane-recent-colors', 'lane-style-color', lanePickr);
+            renderTo('editor-recent-colors', 'edit-color');
+            renderTo('lane-recent-colors', 'lane-style-color');
         }
 
         function openSettings() {
@@ -856,13 +722,6 @@
                 if (el) el.value = userSettings[m[2]][m[1]];
             });
             
-            if(userSettings.themeColors) {
-                for (let i = 0; i < 5; i++) {
-                    const el = document.getElementById(`set-tc-${i+1}`);
-                    if (el) el.value = userSettings.themeColors[i] || '#ffffff';
-                }
-            }
-
             const modal = document.getElementById('settings-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -896,25 +755,8 @@
             userSettings.dark = extract('s-d');
             userSettings.light = extract('s-l');
             
-            userSettings.themeColors = [];
-            for (let i = 0; i < 5; i++) {
-                const el = document.getElementById(`set-tc-${i+1}`);
-                if (el) userSettings.themeColors.push(el.value);
-            }
-            
             localStorage.setItem('chronos_app_settings', JSON.stringify(userSettings));
             applyCSSVariables();
-            renderThemeColors();
-            
-            // Re-initialize Pickr to update the new swatches inside the popup
-            if(editPickr) {
-                editPickr.destroyAndRemove();
-                lanePickr.destroyAndRemove();
-                document.getElementById('edit-color').insertAdjacentHTML('beforebegin', '<div id="edit-color-picker"></div>');
-                document.getElementById('lane-style-color').insertAdjacentHTML('beforebegin', '<div id="lane-color-picker"></div>');
-                initPickrs();
-            }
-
             closeSettings();
             draw();
         }
@@ -924,16 +766,6 @@
                 userSettings = JSON.parse(JSON.stringify(defaultSettings)); 
                 localStorage.setItem('chronos_app_settings', JSON.stringify(userSettings));
                 applyCSSVariables();
-                renderThemeColors();
-                
-                if(editPickr) {
-                    editPickr.destroyAndRemove();
-                    lanePickr.destroyAndRemove();
-                    document.getElementById('edit-color').insertAdjacentHTML('beforebegin', '<div id="edit-color-picker"></div>');
-                    document.getElementById('lane-style-color').insertAdjacentHTML('beforebegin', '<div id="lane-color-picker"></div>');
-                    initPickrs();
-                }
-
                 closeSettings();
                 draw();
             }
@@ -1229,7 +1061,6 @@
             let r = 0, g = 0, b = 0;
             if (hex.length === 4) { r = parseInt(hex[1]+hex[1],16); g = parseInt(hex[2]+hex[2],16); b = parseInt(hex[3]+hex[3],16); }
             else if (hex.length === 7) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); }
-            else if (hex.length === 9) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); } // Handle 8-char hex gracefully
             return `rgba(${r},${g},${b},${alpha})`;
         }
 
@@ -1297,10 +1128,7 @@
             activeStyleNode = node;
             activeStyleIsRoot = isRoot;
             
-            const c = node.color || (isRoot ? '#818cf8' : '#888888');
-            document.getElementById('lane-style-color').value = c;
-            if (lanePickr) lanePickr.setColor(c);
-            
+            document.getElementById('lane-style-color').value = node.color || (isRoot ? '#818cf8' : '#888888');
             renderRecentColors();
 
             const iconContainer = document.getElementById('lane-style-icon-container');
@@ -2755,11 +2583,7 @@
             if (!document.getElementById('edit-id').value) {
                 const laneId = document.getElementById('edit-lane').value;
                 const path = findLanePath(laneId);
-                if (path && path.length > 0) {
-                    const c = path[path.length-1].color || '#888888';
-                    document.getElementById('edit-color').value = c;
-                    if(editPickr) editPickr.setColor(c);
-                }
+                if (path && path.length > 0) document.getElementById('edit-color').value = path[path.length-1].color || '#888888';
             }
         }
 
@@ -2776,9 +2600,6 @@
             document.getElementById('edit-era').value = 'AD';
             document.getElementById('edit-era-end').value = 'AD';
             
-            document.getElementById('edit-color').value = '#888888';
-            if (editPickr) editPickr.setColor('#888888');
-
             document.getElementById('edit-sources-container').innerHTML = '';
             addSourceInput();
 
@@ -2826,12 +2647,9 @@
             document.getElementById('edit-lane').value = ev.lane;
             document.getElementById('edit-icon').value = ev.icon || 'book-open';
             document.getElementById('edit-desc').value = ev.desc || "";
+            document.getElementById('edit-color').value = ev.color || '#888888';
             document.getElementById('edit-has-map').checked = !!ev.hasMap;
             document.getElementById('edit-map-url').value = ev.mapUrl || "";
-            
-            const c = ev.color || '#888888';
-            document.getElementById('edit-color').value = c;
-            if (editPickr) editPickr.setColor(c);
             
             toggleMapInput();
             
@@ -3055,10 +2873,6 @@
         loadProjectsList();
         resize();
         loadData();
-        
-        // Initializing the new Color pickers and Theme colors!
-        initPickrs();
-        renderThemeColors();
 
         const themeBtn = document.getElementById('theme-toggle-btn');
         if (themeBtn) { themeBtn.innerHTML = `<i data-lucide="${isLightMode ? 'moon' : 'sun'}" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>`; }
@@ -3078,4 +2892,3 @@
 </body>
 
 </html>
-f
