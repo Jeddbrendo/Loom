@@ -1,6 +1,6 @@
 {
   "name": "LOOM Timelines",
-  "short_name": "LOOM",
+  "short_name": "LOOM Timelines",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#050507",
