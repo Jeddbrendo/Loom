@@ -166,12 +166,22 @@
                     </select>
                     
                     <div class="flex gap-1 shrink-0">
-                        <button onclick="newProject()" title="New Project" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="folder-plus" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
-                        <button onclick="renameProject()" title="Rename Project" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="pencil" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
-                        <button onclick="document.getElementById('import-csv-file').click()" title="Import CSV List" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="file-spreadsheet" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
+                        <button onclick="newProject()" title="New Project" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all">
+                            <i data-lucide="folder-plus" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        </button>
+                        <button onclick="renameProject()" title="Rename Project" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all">
+                            <i data-lucide="pencil" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        </button>
+                        <button onclick="deleteProject()" title="Delete Project" class="p-2 app-root-lane rounded-lg text-red-400 hover:bg-red-900/20 transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        </button>
+                        <button onclick="document.getElementById('import-csv-file').click()" title="Import CSV List" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="file-spreadsheet" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        </button>
                         <input type="file" id="import-csv-file" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
-                        <button onclick="exportProject()" title="Export Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="upload" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
-                        <button onclick="document.getElementById('import-file').click()" title="Import Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="download" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i></button>
+                        <button onclick="exportProject()" title="Export Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="upload" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        </button>
+                        <button onclick="document.getElementById('import-file').click()" title="Import Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="download" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        </button>
                         <input type="file" id="import-file" accept=".json" class="hidden" onchange="handleImport(event)">
                     </div>
 
@@ -1458,6 +1468,13 @@
         function loadProjectsList() {
             const savedList = localStorage.getItem('chronos_projects_list');
             if (savedList) projectsList = JSON.parse(savedList);
+            
+            // Restore the last active project on page reload
+            const savedActive = localStorage.getItem('chronos_active_project');
+            if (savedActive && projectsList[savedActive]) {
+                currentProjectId = savedActive;
+            }
+
             const selector = document.getElementById('project-selector');
             selector.innerHTML = '';
             for (const [id, name] of Object.entries(projectsList)) {
@@ -1466,22 +1483,22 @@
             selector.value = currentProjectId;
         }
 
-        function saveProjectsList() {
-            localStorage.setItem('chronos_projects_list', JSON.stringify(projectsList));
-            loadProjectsList();
-        }
-
         function switchProject() {
             currentProjectId = document.getElementById('project-selector').value;
+            // Save selection so it survives page reloads
+            localStorage.setItem('chronos_active_project', currentProjectId); 
             loadData();
         }
 
         function newProject() {
             const name = prompt("Enter a name for the new project:");
-            if (name) {
+            // Added strict validation to prevent blank space names
+            if (name && name.trim() !== "") {
                 const id = 'proj_' + Date.now();
-                projectsList[id] = name;
+                projectsList[id] = name.trim();
                 currentProjectId = id;
+                // Save selection so it survives page reloads
+                localStorage.setItem('chronos_active_project', currentProjectId);
                 saveProjectsList();
                 events = [];
                 lanesTree = [
@@ -1493,6 +1510,7 @@
                 loadData(); 
             }
         }
+
         function renameProject() {
             // Get the current name of the active project
             const currentName = projectsList[currentProjectId];
@@ -1504,6 +1522,29 @@
             if (newName && newName.trim() !== "" && newName.trim() !== currentName) {
                projectsList[currentProjectId] = newName.trim();
                saveProjectsList(); // This automatically saves to local storage and rebuilds the <select> dropdown
+            }
+        }
+        function deleteProject() {
+            if (Object.keys(projectsList).length <= 1) {
+                alert("You must have at least one project. Cannot delete the last remaining project.");
+                return;
+            }
+            
+            const currentName = projectsList[currentProjectId];
+            if (confirm(`Are you sure you want to delete the project "${currentName}"? All events and lanes will be permanently lost.`)) {
+                // Remove the project data from local storage
+                localStorage.removeItem(`chronos_events_${currentProjectId}`);
+                localStorage.removeItem(`chronos_lanes_${currentProjectId}`);
+                
+                // Remove from the master project list
+                delete projectsList[currentProjectId];
+                
+                // Fall back to the first available project
+                currentProjectId = Object.keys(projectsList)[0];
+                localStorage.setItem('chronos_active_project', currentProjectId);
+                
+                saveProjectsList();
+                loadData();
             }
         }
 
@@ -1531,7 +1572,7 @@
             URL.revokeObjectURL(url);
         }
 
-        function handleImport(e) {
+         function handleImport(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -1548,6 +1589,10 @@
                                  const id = 'proj_' + Date.now();
                                  projectsList[id] = data.projectName + " (Imported)";
                                  currentProjectId = id;
+                                 
+                                 // ADDED FIX: Save the imported project as the active one so it survives page reloads
+                                 localStorage.setItem('chronos_active_project', currentProjectId);
+                                 
                                  saveProjectsList();
                                  events = data.events;
                                  lanesTree = data.lanes || [];
@@ -1571,7 +1616,6 @@
             reader.readAsText(file);
             e.target.value = '';
         }
-
         function openImportModal() {
             const list = document.getElementById('import-list');
             list.innerHTML = importBuffer.length === 0 ? '<p class="app-text-tertiary text-center py-4">No events found.</p>' : '';
@@ -2757,14 +2801,22 @@
             
             if (currentProjectId === 'default' && events.length === 0 && existingIdx < 0) {
                 const projName = prompt("You are adding your first event! What would you like to name this timeline project?", "My Timeline");
-                if (projName) {
+                if (projName && projName.trim() !== "") {
                     const newId = 'proj_' + Date.now();
-                    projectsList[newId] = projName;
+                    projectsList[newId] = projName.trim();
+                    
+                    // Remove the ghost 'default' project to prevent menu clutter
+                    delete projectsList['default'];
+                    localStorage.removeItem('chronos_events_default');
+                    localStorage.removeItem('chronos_lanes_default');
+                    
                     currentProjectId = newId;
+                    localStorage.setItem('chronos_active_project', currentProjectId);
                     saveProjectsList();
                     document.getElementById('project-selector').value = currentProjectId;
                 }
             }
+
 
             const evData = {
                 id, title, desc: document.getElementById('edit-desc').value.trim(), lane, 
