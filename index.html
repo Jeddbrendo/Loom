@@ -1043,7 +1043,7 @@
             let remDays = days - (y * DAYS_IN_YEAR);
             if (remDays < 0) remDays += DAYS_IN_YEAR;
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            const mLength = [31, 28.2425, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+            const mLength = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
             let mo = 0;
             while (mo < 12 && remDays >= mLength[mo]) {
                 remDays -= mLength[mo];
@@ -1782,6 +1782,7 @@
             
             if (type === 'BiblicalObservational') {
                 const yearPx = DAYS_IN_YEAR * scale;
+                const dayPx = 1 * scale;
                 
                 let stepYrs = MASTER_YEAR_STEPS[0];
                 for(let s of MASTER_YEAR_STEPS) {
@@ -1795,12 +1796,11 @@
                 let startBiblicalYear = Math.floor((startGregYear + 4026) / stepYrs) * stepYrs;
                 let endBiblicalYear = Math.ceil((endGregYear + 4026) / stepYrs) * stepYrs;
 
-                // Failsafe for extreme zoom
                 if (endBiblicalYear - startBiblicalYear > 100000000000) return ticks;
 
-                // Determine if month text should be shown uniformly for all months this zoom frame
-                // A 29-day month is the shortest. Needs ~40px to safely draw text
-                const showMonthText = (29 * scale) > 40;
+                // Uniform visibility check based on the shortest month (~29 days)
+                const showMonthText = (29 * scale) > 45;
+                const showDayText = dayPx > 40;
 
                 for (let by = startBiblicalYear - stepYrs; by <= endBiblicalYear + stepYrs; by += stepYrs) {
                     let y = by - 4026;
@@ -1812,7 +1812,6 @@
                     const yearDays = BiblicalObservationalCalendar.getBiblicalYearDays(y);
                     const yearWidth = yearDays * scale;
 
-                    // Check if the ENTIRE year is off-screen
                     if (x + yearWidth < -50 || x > width + 50) continue;
 
                     if (stepYrs > 1) {
@@ -1850,6 +1849,19 @@
                                         ticks.push({ x: midX, label: monthNames[m], is1AD: false, is1000s: false, isMonthText: true, isYear: false });
                                     }
                                 }
+                                
+                                // Draw Day Ticks
+                                if (dayPx > 15) {
+                                    for (let d = 0; d < months[m].length; d++) {
+                                        let dayX = offsetX + (monthWorldDays + d) * scale;
+                                        if (dayX >= -50 && dayX <= width + 50) {
+                                            // Provide label only if showing day text. 
+                                            // The text is rendered cleanly at a different Y offset, preventing clashing.
+                                            let dayLabel = showDayText ? (d + 1).toString() : "";
+                                            ticks.push({ x: dayX, label: dayLabel, is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true });
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1874,10 +1886,8 @@
             let startY = Math.floor(worldToYear(-offsetX / scale) / stepYrs) * stepYrs;
             let endY = Math.ceil(worldToYear((width - offsetX) / scale) / stepYrs) * stepYrs;
             
-            // Failsafe for extreme zoom
             if (endY - startY > 100000000000) return ticks;
 
-            // Force 1 AD check: If we are skipping years, check if 1 AD is within the current visible range.
             let force1AD = false;
             if (stepYrs > 1 && startY <= 1 && endY >= 1) {
                 force1AD = true;
@@ -1886,7 +1896,6 @@
             for (let y = startY; y <= endY; y += stepYrs) {
                 if (y === 0 && stepYrs === 1) continue;
                 
-                // If we are skipping years, and we cross 0, draw 1 instead so the 1 AD marker stays.
                 let labelYear = y;
                 if (stepYrs > 1 && y === 0) labelYear = 1; 
 
@@ -1897,23 +1906,18 @@
                 let is1000s = Math.abs(labelYear) % 1000 === 0 && labelYear !== 0 && !is1AD;
                 let label = labelYear > 0 ? `${labelYear} AD` : `${Math.abs(labelYear)} BC`;
                 
-                // Only push if it's not 1 AD (we handle that below to ensure it's not drawn twice)
                 if (!is1AD || y === 0 || y === 1) {
                     ticks.push({ x, label, is1AD, is1000s, isMonth: false, isYear: true });
                 }
             }
             
-            // Ensure 1 AD is always drawn if it's on screen, even if skipped by stepYrs
             if (force1AD && stepYrs > 1) {
-                 let x1AD = offsetX + (0 * scale); // 1 AD is 0 days
-                 // Check if it was already drawn to avoid duplicates
+                 let x1AD = offsetX + (0 * scale); 
                  if (!ticks.some(t => t.is1AD)) {
                      ticks.push({ x: x1AD, label: "1 AD", is1AD: true, is1000s: false, isMonth: false, isYear: true });
                  }
             }
 
-            // Uniform visibility check based on the shortest month (February ~ 28.25 days)
-            // A 3-letter month name needs space, requiring at least ~45px for the shortest month.
             const showMonthText = (28.2425 * scale) > 45; 
             const showDayText = dayPx > 40;
 
@@ -1928,12 +1932,10 @@
                     for (let m = 0; m < 12; m++) {
                         let monthX = offsetX + (currentDays * scale);
                         
-                        // Draw Month Tick (skip Jan 1 as it's the Year tick)
                         if (m > 0 && monthPx > 10 && monthX > -50 && monthX < width + 50) { 
                             ticks.push({ x: monthX, label: "", is1AD: false, is1000s: false, isMonth: true, isYear: false });
                         }
                         
-                        // Center the month text
                         if (showMonthText) {
                             let midMonthDays = currentDays + (mLength[m] / 2);
                             let midX = offsetX + (midMonthDays * scale);
@@ -1942,14 +1944,13 @@
                             }
                         }
 
-                        // Draw Day Ticks precisely relative to the month boundary
                         if (dayPx > 15) {
                             let daysInMonth = Math.floor(mLength[m]);
-                            // Start at 1 to skip the 1st of the month, which is already marked by the Year/Month tick
-                            for (let d = 1; d < daysInMonth; d++) {
+                            for (let d = 0; d < daysInMonth; d++) {
                                 let dayX = offsetX + ((currentDays + d) * scale);
                                 if (dayX > -50 && dayX < width + 50) {
-                                    ticks.push({ x: dayX, label: showDayText ? (d + 1).toString() : "", is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true });
+                                    let dayLabel = showDayText ? (d + 1).toString() : "";
+                                    ticks.push({ x: dayX, label: dayLabel, is1AD: false, is1000s: false, isMonth: false, isYear: false, isDay: true });
                                 }
                             }
                         }
@@ -1967,36 +1968,45 @@
             ctx.textAlign = 'center';
             ticksArray.forEach(tck => {
                 if (tck.isMonthText) {
-                    ctx.fillStyle = t.textTertiary; 
-                    ctx.font = `500 10px ${userSettings.font}`;
-                    ctx.fillText(tck.label, tck.x, baseRulerY + 28);
+                    ctx.fillStyle = t.textSecondary; 
+                    ctx.font = `700 10px ${userSettings.font}`;
+                    ctx.fillText(tck.label, tck.x, baseRulerY + 34); // Render centered month text in its own horizontal band
                 } else if (tck.is1AD) {
                     ctx.strokeStyle = t.textPrimary; 
                     ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 24); ctx.stroke();
                     ctx.fillStyle = t.textPrimary; 
                     ctx.font = `900 14px ${userSettings.font}`; 
-                    ctx.fillText(tck.label, tck.x, baseRulerY + 42);
+                    ctx.fillText(tck.label, tck.x, baseRulerY + 48); // Drop special year marker down
                 } else if (tck.is1000s) {
                     ctx.strokeStyle = t.textSecondary; 
                     ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 18); ctx.stroke();
                     ctx.fillStyle = t.textSecondary; 
                     ctx.font = `bold 12px ${userSettings.font}`; 
-                    ctx.fillText(tck.label, tck.x, baseRulerY + 36);
+                    ctx.fillText(tck.label, tck.x, baseRulerY + 46); // Drop bold year markers down
                 } else {
                     ctx.strokeStyle = t.textTertiary; 
                     ctx.lineWidth = 1;
                     
                     let tickLen = 12; 
-                    if (!tck.isYear) { tickLen = tck.isMonth ? 8 : (tck.isDay ? 5 : 12); }
+                    if (tck.isMonth) tickLen = 8;
+                    if (tck.isDay) tickLen = 5;
                     
+                    // Draw lines only for exact boundary markers
                     ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + tickLen); ctx.stroke();
                     
+                    // Draw labels in specific distinct horizontal lanes to prevent ANY overlap
                     if (tck.label) {
-                        ctx.fillStyle = t.textTertiary; 
-                        ctx.font = tck.isMonth ? `500 10px ${userSettings.font}` : `600 11px ${userSettings.font}`;
-                        ctx.fillText(tck.label, tck.x, baseRulerY + (tck.isMonth ? 28 : 32));
+                        if (tck.isDay) {
+                            ctx.fillStyle = t.textTertiary; 
+                            ctx.font = `500 10px ${userSettings.font}`;
+                            ctx.fillText(tck.label, tck.x, baseRulerY + 20); // Days at the very top
+                        } else if (tck.isYear) {
+                            ctx.fillStyle = t.textPrimary; 
+                            ctx.font = `600 11px ${userSettings.font}`;
+                            ctx.fillText(tck.label, tck.x, baseRulerY + 46); // Regular years dropped down
+                        }
                     }
                 }
             });
