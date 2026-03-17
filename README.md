@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🕰️ LOOM Timelines
+#LOOM Timelines
 
 **A highly-performant, standalone web application for visualizing complex history.**
 
