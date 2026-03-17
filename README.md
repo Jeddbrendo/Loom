@@ -1,56 +1,50 @@
-# LOOM Timelines
+LOOM Timelines
+LOOM Timelines is a powerful, standalone web application for creating and visualizing complex historical timelines. Built entirely with vanilla JavaScript and HTML5 Canvas, it runs locally in your browser without requiring a backend.
 
-LOOM Timelines is a powerful, standalone, single-file HTML web application for creating, visualizing, and managing complex historical timelines. Built entirely with vanilla JavaScript and HTML5 Canvas, it runs locally in your browser without requiring a backend or database.
+🌟 Features
+Infinite Pan & Zoom: Navigate smoothly through thousands of events via mouse, scroll, or touch gestures.
 
-## 🌟 Features
+Precision Dating: Log events down to the exact year, month, day, hour, and minute.
 
-### ⏱️ Rich Visualization & Navigation
-* **High-Performance Canvas:** Renders thousands of events smoothly using HTML5 Canvas.
-* **Infinite Pan & Zoom:** Intuitive navigation using mouse drag, scroll wheel, or touch/pinch gestures.
-* **Dual Calendar Scales:** View standard Gregorian dates alongside secondary historical/geological ruler:
-  * Ancient Hebrew (Biblical) with dynamic lunar-solar month approximation.
-* **Dynamic Gridlines:** Toggleable grid snapping to easily align and track eras.
+Milestones & Time Spans: Plot single-point historical events or duration-based spans.
 
-### 📅 Advanced Event Management
-* **Milestones & Time Spans:** Create single-point events or duration-based spans.
-* **"Circa" Support:** Visually represent approximate start/end dates with dynamic fading gradients.
-* **Rich Media Integration:** Add descriptions, external map links, source URLs, and image galleries (includes built-in slideshow for multiple images).
-* **Comparison View:** Select up to 3 events at once to compare their details side-by-side in the floating details panel.
+Advanced "Circa" Fades: Visually represent uncertain dates with fading gradients that you can configure down to specific years, months, or days of uncertainty.
 
-### 🗂️ Organization & Data Portability
-* **Hierarchical Lanes:** Organize events into collapsible root groups and sub-lanes. Assign distinct colors and icons to categories.
-* **Local Storage:** All projects, events, and settings are saved automatically to your browser's local storage.
-* **Multi-Project Support:** Create and switch between multiple timeline projects seamlessly.
-* **JSON Export/Import:** Backup your projects or share them with others via JSON files. Export entire projects or specific lane groups.
-* **CSV Bulk Import:** Quickly populate timelines by importing CSV files containing event data (Supports columns for Title, Start Year, End Year, Lane, Color, Image URLs, etc.). Download template available: Timeline_Template_Bulk.csv
+Dual Calendar Scales: View the standard Gregorian calendar alongside specialized secondary rulers (like the Ancient Hebrew observational calendar).
 
-### 🎨 Deep Customization
-* **Dark & Light Modes:** Built-in theme toggling.
-* **Exhaustive Theme Editor:** Customize 11 specific color variables for *both* dark and light themes (Backgrounds, Lanes, Text, Borders, Event Opacities) directly from the UI.
-* **Custom Fonts & Accents:** Tailor the global font family and primary accent color to your preferences.
+Hierarchical Lanes: Organize events into collapsible, color-coded groups and sub-categories.
 
-## 🚀 Quick Start
+Rich Media Cards: Attach descriptions, images (with built-in slideshows), source links, and map URLs to events.
 
-Because LOOM Timelines is a zero-dependency, single-file application, installation is incredibly simple:
+Comparison View: Select up to 3 events simultaneously to compare their details side-by-side.
 
-1. Clone the repository or download the `LoomTimelines.html` file.
-2. Double-click the file to open it in any modern web browser (Chrome, Firefox, Edge, Safari).
-3. Start building your timeline!
+Date Calculator: Built-in tool to add or subtract specific years, months, and days across BCE/CE boundaries.
 
-*(Note: An active internet connection is briefly required upon loading to fetch Tailwind CSS and Lucide Icons from their respective CDNs).*
+Deep Customization: Built-in Dark/Light modes with an exhaustive theme editor to tweak fonts and 11 specific color variables.
 
-## 💡 How to Use
+Data Portability (Local Storage): Auto-saves projects to your browser. Backup or share via JSON export/import.
 
-* **Navigation:** Click and drag the canvas to pan. Use your scroll wheel to zoom in and out of specific eras.
-* **Adding Events:** Click the **+ EVENT** button in the top menu. Fill out the title, year(s), and categorize it into a lane.
-* **Managing Lanes:** Click the **GROUP** button to create a new category lane. Click the three-dot menu on any lane header to rename, delete, add sub-lanes, or change its color/icon.
-* **Viewing Details:** Tap or click on any rendered event on the timeline to open the details panel.
-* **Bulk Import:** Create a CSV with headers like `Title`, `Start Year`, `End Year`, `Description`, and `Image` and click the spreadsheet icon to instantly map your data. Negative numbers or "BC/BCE" appended to years will automatically map to the BCE timeline.
+Bulk CSV Import: Rapidly populate timelines by importing a CSV file mapping your data directly to the canvas.
 
-## 🛠️ Built With
-* **HTML5 Canvas:** For hardware-accelerated rendering.
-* **Vanilla JavaScript:** Zero frontend frameworks used for logic.
-* **Tailwind CSS (CDN):** For fast, modern, utility-first UI styling.
-* **Lucide Icons (CDN):** For clean, scalable SVG iconography.
+🚀 Quick Start
+LOOM Timelines is a zero-dependency, single-file application.
 
+Download index.html.
+
+Double-click to open it in any modern web browser.
+
+Start building!
+
+(Note: An internet connection is required on first load to fetch Tailwind CSS and Lucide Icons).
+
+💡 Basic Usage
+Navigate: Click and drag to pan; use the scroll wheel to zoom.
+
+Create Events: Click + EVENT, fill in the timing data, and assign it to a Lane.
+
+Manage Categories: Click GROUP to make root lanes. Use the three-dot menu on any lane to add sub-lanes or change colors.
+
+View Details: Click any event on the canvas to open its data card.
+
+Bulk Import: Click the spreadsheet icon to view the expected column format and upload your CSV data directly to the timeline.
 
