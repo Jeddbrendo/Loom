@@ -1,4 +1,5 @@
 LOOM Timelines
+
 LOOM Timelines is a powerful, standalone web application for creating and visualizing complex historical timelines. Built entirely with vanilla JavaScript and HTML5 Canvas, it runs locally in your browser without requiring a backend.
 
 🌟 Features
