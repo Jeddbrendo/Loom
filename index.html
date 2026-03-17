@@ -362,6 +362,57 @@
                 </div>
             </div>
 
+            <!-- NEW PRECISION UI -->
+            <div class="mt-2 pt-2 app-border-t">
+                <div class="flex items-center gap-2 mb-3">
+                    <input type="checkbox" id="edit-enable-md" onchange="togglePrecisionUI()">
+                    <label class="text-[10px] app-text-secondary uppercase font-bold cursor-pointer" onclick="document.getElementById('edit-enable-md').click()">Specify Month & Day</label>
+                </div>
+                
+                <div id="edit-md-container" class="hidden grid-cols-2 gap-4 mb-3">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Start Month/Day</label>
+                        <div class="flex gap-2">
+                            <select id="edit-start-month" class="w-1/2 p-3.5 text-sm outline-none font-bold cursor-pointer px-1">
+                                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                            <input type="number" id="edit-start-day" placeholder="Day" class="w-1/2 p-3.5 text-base outline-none" min="1" max="31">
+                        </div>
+                    </div>
+                    <div id="edit-md-end-wrapper" class="opacity-0 pointer-events-none transition-all">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">End Month/Day</label>
+                        <div class="flex gap-2">
+                            <select id="edit-end-month" class="w-1/2 p-3.5 text-sm outline-none font-bold cursor-pointer px-1">
+                                <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
+                            </select>
+                            <input type="number" id="edit-end-day" placeholder="Day" class="w-1/2 p-3.5 text-base outline-none" min="1" max="31">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="edit-time-switch-container" class="hidden items-center gap-2 mb-3">
+                    <input type="checkbox" id="edit-enable-time" onchange="togglePrecisionUI()">
+                    <label class="text-[10px] app-text-secondary uppercase font-bold cursor-pointer" onclick="document.getElementById('edit-enable-time').click()">Specify Time (Hours/Mins)</label>
+                </div>
+
+                <div id="edit-time-container" class="hidden grid-cols-2 gap-4 mb-2">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Start Time</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="edit-start-hour" placeholder="HH (0-23)" class="w-1/2 p-3.5 text-base outline-none" min="0" max="23">
+                            <input type="number" id="edit-start-minute" placeholder="MM (0-59)" class="w-1/2 p-3.5 text-base outline-none" min="0" max="59">
+                        </div>
+                    </div>
+                    <div id="edit-time-end-wrapper" class="opacity-0 pointer-events-none transition-all">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">End Time</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="edit-end-hour" placeholder="HH (0-23)" class="w-1/2 p-3.5 text-base outline-none" min="0" max="23">
+                            <input type="number" id="edit-end-minute" placeholder="MM (0-59)" class="w-1/2 p-3.5 text-base outline-none" min="0" max="59">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div id="edit-fade-container" class="grid grid-cols-2 gap-4 hidden transition-all">
                 <div id="edit-fade-start-wrapper">
                     <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Start Fade (Yrs)</label>
@@ -1265,6 +1316,52 @@
         function yearToWorld(year) {
             if (year >= 1) return (year - 1) * DAYS_IN_YEAR;
             return year <= -1 ? year * DAYS_IN_YEAR : 0;
+        }
+
+        function exactDateToWorld(year, month, day, hour, minute) {
+            let days = yearToWorld(year);
+            if (month != null && day != null) {
+                const mLength = [31, 28.2425, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+                let daysInYear = 0;
+                for(let i = 0; i < month - 1; i++) daysInYear += mLength[i];
+                daysInYear += (day - 1);
+                days += daysInYear;
+            }
+            if (hour != null && minute != null) {
+                days += (hour / 24) + (minute / (24 * 60));
+            }
+            return days;
+        }
+
+        function formatEventDate(ev, isEnd) {
+            const days = isEnd ? ev.xEnd : ev.x;
+            if (days == null) return "";
+            
+            const y = Math.floor(days / DAYS_IN_YEAR);
+            let yStr = y >= 0 ? (y + 1) + " AD" : Math.abs(y) + " BC";
+            
+            if (ev.mdEnabled) {
+                const month = isEnd ? ev.eMonth : ev.sMonth;
+                const day = isEnd ? ev.eDay : ev.sDay;
+                if (month != null && day != null) {
+                    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    let dateStr = `${months[month - 1]} ${day}, ${yStr}`;
+                    
+                    if (ev.timeEnabled) {
+                        let hour = isEnd ? ev.eHour : ev.sHour;
+                        let minute = isEnd ? ev.eMinute : ev.sMinute;
+                        if (hour != null && minute != null) {
+                            let ampm = hour >= 12 ? 'PM' : 'AM';
+                            let h12 = hour % 12;
+                            if (h12 === 0) h12 = 12;
+                            let minStr = minute < 10 ? '0' + minute : minute;
+                            dateStr += ` at ${h12}:${minStr} ${ampm}`;
+                        }
+                    }
+                    return dateStr;
+                }
+            }
+            return yStr;
         }
 
         function worldToYear(days) {
@@ -2536,8 +2633,8 @@
                             if (px + sw > 0 && px < width) {
                                 ctx.font = `600 13px ${userSettings.font}`;
                                 const titleText = `${ev.title}`;
-                                const sStr = (ev.startCirca ? "c. " : "") + worldToDateStr(ev.x, false);
-                                const eStr = (ev.endCirca ? "c. " : "") + worldToDateStr(ev.xEnd, false);
+                                const sStr = (ev.startCirca ? "c. " : "") + formatEventDate(ev, false);
+                                const eStr = (ev.endCirca ? "c. " : "") + formatEventDate(ev, true);
                                 const dateStr = `(${sStr} - ${eStr})`;
                                 
                                 const titleW = ctx.measureText(titleText).width;
@@ -2596,7 +2693,7 @@
                             }
 
                             ctx.font = `600 13px ${userSettings.font}`;
-                            const dStr = (ev.startCirca ? "c. " : "") + worldToDateStr(ev.x, false);
+                            const dStr = (ev.startCirca ? "c. " : "") + formatEventDate(ev, false);
                             const fullText = `${ev.title} (${dStr})`;
                             const textW = ctx.measureText(fullText).width;
                             const labelX = px - textW / 2;
@@ -2697,8 +2794,8 @@
                 tabBtn.onclick = () => { activeTabId = id; renderDetailsPanel(); };
                 tabsContainer.appendChild(tabBtn);
 
-                const sStr = (ev.startCirca ? "c. " : "") + worldToDateStr(ev.x, false);
-                const eStr = ev.xEnd ? ((ev.endCirca ? "c. " : "") + worldToDateStr(ev.xEnd, false)) : "";
+                const sStr = (ev.startCirca ? "c. " : "") + formatEventDate(ev, false);
+                const eStr = ev.xEnd ? ((ev.endCirca ? "c. " : "") + formatEventDate(ev, true)) : "";
                 const dateStr = ev.xEnd ? `${sStr} - ${eStr}` : sStr;
                 
                 let durationStr = '';
@@ -2905,18 +3002,59 @@
             const spBtn = document.getElementById('type-span-btn');
             const endYearDiv = document.getElementById('edit-year-end-container');
             
+            const mdEndWrapper = document.getElementById('edit-md-end-wrapper');
+            const timeEndWrapper = document.getElementById('edit-time-end-wrapper');
+            
             if(type === 'point') {
                 ptBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active";
                 spBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive";
                 endYearDiv.classList.add('hidden');
                 document.getElementById('edit-year-end').value = ''; 
                 document.getElementById('edit-end-circa').checked = false;
+                
+                if (mdEndWrapper) { mdEndWrapper.classList.add('opacity-0', 'pointer-events-none'); mdEndWrapper.classList.remove('opacity-100', 'pointer-events-auto'); }
+                if (timeEndWrapper) { timeEndWrapper.classList.add('opacity-0', 'pointer-events-none'); timeEndWrapper.classList.remove('opacity-100', 'pointer-events-auto'); }
             } else {
                 spBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-active";
                 ptBtn.className = "flex-1 py-2 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all seg-inactive";
                 endYearDiv.classList.remove('hidden');
+                
+                if (mdEndWrapper) { mdEndWrapper.classList.remove('opacity-0', 'pointer-events-none'); mdEndWrapper.classList.add('opacity-100', 'pointer-events-auto'); }
+                if (timeEndWrapper) { timeEndWrapper.classList.remove('opacity-0', 'pointer-events-none'); timeEndWrapper.classList.add('opacity-100', 'pointer-events-auto'); }
             }
             updateFadeVisibility();
+        }
+
+        function togglePrecisionUI() {
+            const mdEnabled = document.getElementById('edit-enable-md').checked;
+            const timeEnabled = document.getElementById('edit-enable-time').checked;
+
+            const mdCont = document.getElementById('edit-md-container');
+            const timeSwitch = document.getElementById('edit-time-switch-container');
+            const timeCont = document.getElementById('edit-time-container');
+
+            if (mdEnabled) {
+                mdCont.classList.remove('hidden');
+                mdCont.classList.add('grid');
+                timeSwitch.classList.remove('hidden');
+                timeSwitch.classList.add('flex');
+                
+                if (timeEnabled) {
+                    timeCont.classList.remove('hidden');
+                    timeCont.classList.add('grid');
+                } else {
+                    timeCont.classList.add('hidden');
+                    timeCont.classList.remove('grid');
+                }
+            } else {
+                mdCont.classList.add('hidden');
+                mdCont.classList.remove('grid');
+                timeSwitch.classList.add('hidden');
+                timeSwitch.classList.remove('flex');
+                timeCont.classList.add('hidden');
+                timeCont.classList.remove('grid');
+                document.getElementById('edit-enable-time').checked = false;
+            }
         }
 
         function updateFadeVisibility() {
@@ -3028,6 +3166,18 @@
             document.getElementById('edit-color').value = '#888888';
             if (editPickr) editPickr.setColor('#888888');
             
+            document.getElementById('edit-enable-md').checked = false;
+            document.getElementById('edit-enable-time').checked = false;
+            document.getElementById('edit-start-month').value = "1";
+            document.getElementById('edit-start-day').value = "";
+            document.getElementById('edit-end-month').value = "1";
+            document.getElementById('edit-end-day').value = "";
+            document.getElementById('edit-start-hour').value = "";
+            document.getElementById('edit-start-minute').value = "";
+            document.getElementById('edit-end-hour').value = "";
+            document.getElementById('edit-end-minute').value = "";
+            togglePrecisionUI();
+            
             document.getElementById('edit-sources-container').innerHTML = '';
             addSourceInput();
 
@@ -3071,6 +3221,21 @@
                 document.getElementById('edit-end-circa').checked = false;
                 setEventType('point');
             }
+
+            document.getElementById('edit-enable-md').checked = ev.mdEnabled || false;
+            document.getElementById('edit-enable-time').checked = ev.timeEnabled || false;
+
+            document.getElementById('edit-start-month').value = ev.sMonth || "1";
+            document.getElementById('edit-start-day').value = ev.sDay || "";
+            document.getElementById('edit-end-month').value = ev.eMonth || "1";
+            document.getElementById('edit-end-day').value = ev.eDay || "";
+            
+            document.getElementById('edit-start-hour').value = ev.sHour != null ? ev.sHour : "";
+            document.getElementById('edit-start-minute').value = ev.sMinute != null ? ev.sMinute : "";
+            document.getElementById('edit-end-hour').value = ev.eHour != null ? ev.eHour : "";
+            document.getElementById('edit-end-minute').value = ev.eMinute != null ? ev.eMinute : "";
+
+            togglePrecisionUI();
             
             document.getElementById('edit-lane').value = ev.lane;
             document.getElementById('edit-icon').value = ev.icon || 'book-open';
@@ -3149,6 +3314,38 @@
                 if (eYear < sYear) { alert("End Year must be chronologically after Start Year."); return; }
             }
 
+            const mdEnabled = document.getElementById('edit-enable-md').checked;
+            const timeEnabled = document.getElementById('edit-enable-time').checked;
+            
+            let sMonth = null, sDay = null, sHour = null, sMinute = null;
+            let eMonth = null, eDay = null, eHour = null, eMinute = null;
+
+            if (mdEnabled) {
+                sMonth = parseInt(document.getElementById('edit-start-month').value) || 1;
+                sDay = parseInt(document.getElementById('edit-start-day').value) || 1;
+                if (isSpan) {
+                    eMonth = parseInt(document.getElementById('edit-end-month').value) || 1;
+                    eDay = parseInt(document.getElementById('edit-end-day').value) || 1;
+                }
+                
+                if (timeEnabled) {
+                    sHour = parseInt(document.getElementById('edit-start-hour').value) || 0;
+                    sMinute = parseInt(document.getElementById('edit-start-minute').value) || 0;
+                    if (isSpan) {
+                        eHour = parseInt(document.getElementById('edit-end-hour').value) || 0;
+                        eMinute = parseInt(document.getElementById('edit-end-minute').value) || 0;
+                    }
+                }
+            }
+
+            const xStart = exactDateToWorld(sYear, sMonth, sDay, sHour, sMinute);
+            const xEnd = isSpan ? exactDateToWorld(eYear, eMonth, eDay, eHour, eMinute) : null;
+            
+            if (isSpan && xEnd < xStart) {
+                alert("End Date must be chronologically after Start Date."); 
+                return;
+            }
+
             const sourceItems = document.querySelectorAll('.source-item');
             const sources = Array.from(sourceItems).map(item => {
                 return {
@@ -3190,12 +3387,15 @@
                 hasMap: document.getElementById('edit-has-map').checked,
                 mapUrl: document.getElementById('edit-map-url').value.trim(),
                 sources: sources,
-                x: yearToWorld(sYear), type: isSpan ? 'span' : 'point',
+                x: xStart, type: isSpan ? 'span' : 'point',
                 startCirca: document.getElementById('edit-start-circa').checked,
                 endCirca: isSpan ? document.getElementById('edit-end-circa').checked : false,
                 startFadeYears: isSpan ? (parseFloat(document.getElementById('edit-fade-start').value) || 50) : null,
                 endFadeYears: isSpan ? (parseFloat(document.getElementById('edit-fade-end').value) || 50) : null,
-                xEnd: isSpan ? yearToWorld(eYear) : null
+                xEnd: xEnd,
+                mdEnabled, timeEnabled,
+                sMonth, sDay, sHour, sMinute,
+                eMonth, eDay, eHour, eMinute
             };
 
             if (existingIdx >= 0) events[existingIdx] = evData;
