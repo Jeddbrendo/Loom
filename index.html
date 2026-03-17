@@ -128,6 +128,15 @@
 
         input[type="range"] { accent-color: var(--user-accent); cursor: pointer; }
         input[type="checkbox"] { accent-color: var(--user-accent); width: 16px; height: 16px; cursor: pointer; }
+        /* Hide HTML5 Number Spinners globally to save space */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
 
         .seg-active { background-color: var(--app-text-primary); color: var(--app-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .seg-inactive { color: var(--app-text-tertiary); }
@@ -232,9 +241,11 @@
                         <button onclick="deleteProject()" title="Delete Project" class="p-2 app-root-lane rounded-lg text-red-400 hover:bg-red-900/20 transition-all">
                             <i data-lucide="trash-2" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
                         </button>
-                        <button onclick="document.getElementById('import-csv-file').click()" title="Import CSV List" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="file-spreadsheet" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
+                        <button onclick="openCSVMenu()" title="CSV Options" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
                         </button>
                         <input type="file" id="import-csv-file" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+
                         <button onclick="exportProject()" title="Export Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="upload" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
                         </button>
                         <button onclick="document.getElementById('import-file').click()" title="Import Project JSON" class="p-2 app-root-lane rounded-lg app-text-secondary hover:brightness-125 transition-all"><i data-lucide="download" class="w-4 h-4 sm:w-3.5 sm:h-3.5"></i>
@@ -413,16 +424,32 @@
                 </div>
             </div>
 
-            <div id="edit-fade-container" class="grid grid-cols-2 gap-4 hidden transition-all">
-                <div id="edit-fade-start-wrapper">
-                    <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">Start Fade (Yrs)</label>
-                    <input type="number" id="edit-fade-start" placeholder="50" class="w-full p-3.5 text-base outline-none">
-                </div>
-                <div id="edit-fade-end-wrapper">
-                    <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1">End Fade (Yrs)</label>
-                    <input type="number" id="edit-fade-end" placeholder="50" class="w-full p-3.5 text-base outline-none">
+            <div id="edit-fade-container" class="hidden transition-all flex-col gap-4 bg-black/10 p-3 rounded-xl app-border mt-2">
+                <div class="text-[10px] font-bold uppercase tracking-wider app-text-primary text-center pb-1 app-border-b mb-1">Circa Fade Configuration</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="edit-fade-start-wrapper">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1 text-indigo-400">Start Fade Distance</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="edit-fade-start-y" placeholder="Yrs" class="w-1/3 p-3.5 text-sm outline-none" min="0">
+                            <input type="number" id="edit-fade-start-m" placeholder="Mth" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="11">
+                            <input type="number" id="edit-fade-start-d" placeholder="Days" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="30">
+                            <input type="number" id="edit-fade-start-h" placeholder="Hrs" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="23">
+                            <input type="number" id="edit-fade-start-min" placeholder="Min" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="59">
+                        </div>
+                    </div>
+                    <div id="edit-fade-end-wrapper">
+                        <label class="block text-[10px] font-bold uppercase tracking-wider app-text-secondary mb-1.5 ml-1 text-indigo-400">End Fade Distance</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="edit-fade-end-y" placeholder="Yrs" class="w-1/3 p-3.5 text-sm outline-none" min="0">
+                            <input type="number" id="edit-fade-end-m" placeholder="Mth" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="11">
+                            <input type="number" id="edit-fade-end-d" placeholder="Days" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="30">
+                            <input type="number" id="edit-fade-end-h" placeholder="Hrs" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="23">
+                            <input type="number" id="edit-fade-end-min" placeholder="Min" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="59">
+                        </div>
+                    </div>
                 </div>
             </div>
+
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -508,6 +535,69 @@
     </div>
 
     <!-- Modals -->
+        <!-- CSV MENU MODAL -->
+    <div id="csv-menu-modal" class="fixed inset-0 bg-black/80 z-[300] flex-col items-center justify-center hidden opacity-0 transition-opacity">
+        <div class="app-card w-full max-w-sm flex flex-col rounded-2xl p-6 relative m-4 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold app-text-primary">CSV Options</h2>
+                <button onclick="closeCSVMenu()" class="p-1.5 app-root-lane hover:brightness-125 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5 app-text-secondary"></i></button>
+            </div>
+            <div class="flex flex-col gap-4">
+                <button onclick="document.getElementById('import-csv-file').click(); closeCSVMenu();" class="p-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2">
+                    <i data-lucide="upload" class="w-5 h-5"></i> Import CSV File
+                </button>
+                <button onclick="closeCSVMenu(); openCSVFormatModal();" class="p-4 app-root-lane app-border hover:brightness-125 app-text-primary rounded-xl font-bold transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="table" class="w-5 h-5 text-indigo-400"></i> View CSV Format
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV FORMAT MODAL -->
+    <div id="csv-format-modal" class="fixed inset-0 bg-black/80 z-[300] flex-col items-center justify-center hidden opacity-0 transition-opacity">
+        <div class="app-card w-full max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col rounded-2xl p-6 sm:p-8 relative m-4 shadow-2xl scrollbar-hide">
+            <div class="flex justify-between items-center mb-4 pb-4 app-border-b">
+                <h2 class="text-xl font-bold app-text-primary">Expected CSV Format</h2>
+                <button onclick="closeCSVFormatModal()" class="p-1.5 app-root-lane hover:brightness-125 rounded-full transition-colors shrink-0"><i data-lucide="x" class="w-5 h-5 app-text-secondary"></i></button>
+            </div>
+            <div class="space-y-4">
+                <p class="app-text-secondary text-sm leading-relaxed">
+                    Your CSV file should contain the following column headers (case-insensitive). Only <strong>Title</strong> and <strong>Start Year</strong> are mandatory. 
+                </p>
+                <div class="overflow-x-auto rounded-xl app-border">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="app-root-lane app-border-b app-text-primary text-[10px] uppercase tracking-wider">
+                            <tr>
+                                <th class="p-3">Column Name</th>
+                                <th class="p-3">Description</th>
+                                <th class="p-3">Example</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y app-border app-text-secondary text-xs">
+                            <tr><td class="p-3 font-bold text-indigo-400">Title / Name</td><td class="p-3">Name of the event.</td><td class="p-3 app-text-primary">Fall of Rome</td></tr>
+                            <tr><td class="p-3 font-bold text-indigo-400">Start Year</td><td class="p-3">Start date. Use negative numbers or "BC".</td><td class="p-3 app-text-primary">476 AD <em>or</em> -476</td></tr>
+                            <tr><td class="p-3">End Year</td><td class="p-3">End date (creates a time span).</td><td class="p-3 app-text-primary">1453</td></tr>
+                            <tr><td class="p-3">Start Month / Day</td><td class="p-3">Optional exact start date (1-12, 1-31).</td><td class="p-3 app-text-primary">Month: 5, Day: 12</td></tr>
+                            <tr><td class="p-3">Start Hour / Min</td><td class="p-3">Optional exact start time (0-23, 0-59).</td><td class="p-3 app-text-primary">Hour: 14, Min: 30</td></tr>
+                            <tr><td class="p-3">Circa Start</td><td class="p-3">Fades the event start (True/False).</td><td class="p-3 app-text-primary">True</td></tr>
+                            <tr><td class="p-3">Lane / Group</td><td class="p-3">Category to group the event.</td><td class="p-3 app-text-primary">Roman Empire</td></tr>
+                            <tr><td class="p-3">Description</td><td class="p-3">Historical context or details.</td><td class="p-3 app-text-primary">The Empire fell...</td></tr>
+                            <tr><td class="p-3">Color / Hex</td><td class="p-3">Hex code for event color.</td><td class="p-3 app-text-primary">#EF4444</td></tr>
+                            <tr><td class="p-3">Icon</td><td class="p-3">Lucide icon name.</td><td class="p-3 app-text-primary">swords</td></tr>
+                            <tr><td class="p-3">Image</td><td class="p-3">Image URLs (comma or pipe separated).</td><td class="p-3 app-text-primary">https://...</td></tr>
+                            <tr><td class="p-3">Map</td><td class="p-3">Google Maps URL.</td><td class="p-3 app-text-primary">https://maps...</td></tr>
+                            <tr><td class="p-3">Source / Link</td><td class="p-3">Reference URL.</td><td class="p-3 app-text-primary">https://wikipedia...</td></tr>
+                        </tbody>
+
+                    </table>
+                </div>
+                <div class="mt-4 pt-2 flex justify-end">
+                    <button onclick="closeCSVFormatModal()" class="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-all shadow-lg">Got it</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="import-modal" class="fixed inset-0 bg-black/80 z-[300] items-center justify-center hidden">
         <div class="ui-panel w-full max-w-2xl max-h-[85vh] overflow-y-auto flex flex-col rounded-2xl p-6 relative m-4">
             <h2 class="text-xl font-bold mb-4 app-text-primary">Import Events</h2>
@@ -1094,6 +1184,37 @@
 
         const DAYS_IN_YEAR = 365.2425;
 
+        function openCSVMenu() {
+            const modal = document.getElementById('csv-menu-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function closeCSVMenu() {
+            const modal = document.getElementById('csv-menu-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+        }
+
+        function openCSVFormatModal() {
+            const modal = document.getElementById('csv-format-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function closeCSVFormatModal() {
+            const modal = document.getElementById('csv-format-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+        }
+
+        // Custom CSV Parser robust enough for complex strings inside quotes
+        // ... (Your existing code continues here)
+
         // Custom CSV Parser robust enough for complex strings inside quotes
         function csvToArray(strData) {
             const objPattern = new RegExp(
@@ -1131,6 +1252,7 @@
                         return -1;
                     };
 
+                    // Existing
                     const iTitle = getIdx('title', 'name', 'event');
                     const iStart = getIdx('start year', 'start', 'year');
                     const iEnd = getIdx('end year', 'end');
@@ -1141,6 +1263,22 @@
                     const iImage = getIdx('image', 'image url', 'imageurl', 'images');
                     const iMap = getIdx('map', 'map url', 'mapurl');
                     const iSource = getIdx('source', 'link', 'url');
+                    
+                    // NEW: Precision & Circa
+                    const iStartMonth = getIdx('start month', 's month');
+                    const iStartDay = getIdx('start day', 's day');
+                    const iStartHour = getIdx('start hour', 's hour');
+                    const iStartMin = getIdx('start minute', 'start min', 's min');
+                    
+                    const iEndMonth = getIdx('end month', 'e month');
+                    const iEndDay = getIdx('end day', 'e day');
+                    const iEndHour = getIdx('end hour', 'e hour');
+                    const iEndMin = getIdx('end minute', 'end min', 'e min');
+
+                    const iStartCirca = getIdx('circa start', 'start circa', 'circa');
+                    const iEndCirca = getIdx('circa end', 'end circa');
+                    const iStartFade = getIdx('start fade', 'fade start');
+                    const iEndFade = getIdx('end fade', 'fade end');
 
                     if (iTitle === -1 || iStart === -1) {
                         alert("CSV must contain at least 'Title' and 'Start Year' columns.");
@@ -1149,7 +1287,6 @@
 
                     importBuffer = [];
                     importBufferLanes = [];
-                    
                     let rawEvents = [];
 
                     for(let i=1; i<data.length; i++) {
@@ -1158,21 +1295,47 @@
 
                         const title = row[iTitle] ? row[iTitle].trim() : 'Untitled';
                         
+                        // Parse Start
                         let sStr = row[iStart] ? row[iStart].trim() : '1';
                         let sEra = sStr.toLowerCase().includes('bc') || sStr.includes('-') ? 'BC' : 'AD';
                         let sYearNum = Math.abs(parseFloat(sStr.replace(/[^0-9.-]/g, '')) || 1);
                         if(sYearNum === 0) sYearNum = 1;
                         let sYear = sEra === 'BC' ? -sYearNum : sYearNum;
 
+                        let sMonth = iStartMonth >= 0 && row[iStartMonth] ? parseInt(row[iStartMonth]) : null;
+                        let sDay = iStartDay >= 0 && row[iStartDay] ? parseInt(row[iStartDay]) : null;
+                        let sHour = iStartHour >= 0 && row[iStartHour] ? parseInt(row[iStartHour]) : null;
+                        let sMin = iStartMin >= 0 && row[iStartMin] ? parseInt(row[iStartMin]) : null;
+
+                        // Parse End
                         let eYear = null;
+                        let eMonth = null, eDay = null, eHour = null, eMin = null;
                         if(iEnd >= 0 && row[iEnd] && row[iEnd].trim() !== '') {
                             let eStr = row[iEnd].trim();
                             let eEra = eStr.toLowerCase().includes('bc') || eStr.includes('-') ? 'BC' : 'AD';
                             let eYearNum = Math.abs(parseFloat(eStr.replace(/[^0-9.-]/g, '')) || 1);
                             if(eYearNum === 0) eYearNum = 1;
                             eYear = eEra === 'BC' ? -eYearNum : eYearNum;
-                            if(eYear < sYear) eYear = sYear; 
+                            
+                            eMonth = iEndMonth >= 0 && row[iEndMonth] ? parseInt(row[iEndMonth]) : null;
+                            eDay = iEndDay >= 0 && row[iEndDay] ? parseInt(row[iEndDay]) : null;
+                            eHour = iEndHour >= 0 && row[iEndHour] ? parseInt(row[iEndHour]) : null;
+                            eMin = iEndMin >= 0 && row[iEndMin] ? parseInt(row[iEndMin]) : null;
                         }
+
+                        let mdEnabled = (sMonth != null || sDay != null || eMonth != null || eDay != null);
+                        let timeEnabled = (sHour != null || sMin != null || eHour != null || eMin != null);
+
+                        const xStart = exactDateToWorld(sYear, sMonth || 1, sDay || 1, sHour || 0, sMin || 0);
+                        const xEnd = eYear !== null ? exactDateToWorld(eYear, eMonth || 1, eDay || 1, eHour || 0, eMin || 0) : null;
+
+                        // Check Circa & Fade
+                        const isTrue = (val) => val && ['true', 'yes', 'y', '1'].includes(val.trim().toLowerCase());
+                        const startCirca = iStartCirca >= 0 ? isTrue(row[iStartCirca]) : false;
+                        const endCirca = iEndCirca >= 0 ? isTrue(row[iEndCirca]) : false;
+                        
+                        const startFadeYears = iStartFade >= 0 && row[iStartFade] ? parseFloat(row[iStartFade]) : 50;
+                        const endFadeYears = iEndFade >= 0 && row[iEndFade] ? parseFloat(row[iEndFade]) : 50;
 
                         let catName = 'Uncategorized';
                         if (iLane >= 0 && row[iLane] && row[iLane].trim() !== '') {
@@ -1202,13 +1365,25 @@
                             hasMap: (iMap >= 0 && row[iMap] && row[iMap].trim() !== ''),
                             mapUrl: (iMap >= 0 && row[iMap]) ? row[iMap] : '',
                             sources: sources,
-                            x: yearToWorld(sYear),
                             type: isSpan ? 'span' : 'point',
-                            startCirca: false,
-                            endCirca: false,
-                            startFadeYears: 50,
-                            endFadeYears: 50,
-                            xEnd: isSpan ? yearToWorld(eYear) : null
+                            
+                            x: xStart,
+                            xEnd: xEnd,
+                            
+                            mdEnabled, timeEnabled,
+                            sMonth, sDay, sHour, sMinute: sMin,
+                            eMonth, eDay, eHour, eMinute: eMin,
+
+                            startCirca, endCirca,
+                            startFadeYears, endFadeYears,
+                            
+                            // Map default fade years to the fadeData object for consistency
+                            fadeData: { 
+                                sY: startFadeYears, sM: 0, sD: 0, sH: 0, sMin: 0, 
+                                eY: endFadeYears, eM: 0, eD: 0, eH: 0, eMin: 0 
+                            },
+                            startFadeDays: startFadeYears * DAYS_IN_YEAR,
+                            endFadeDays: endFadeYears * DAYS_IN_YEAR
                         });
                     }
 
@@ -1235,8 +1410,8 @@
 
                         catEvents.forEach(ev => {
                             let titleW = ctx.measureText(ev.title || '').width;
-                            let dateW = 150; // Approximated generous date string width
-                            let textW = titleW + dateW + 30; // 30px padding
+                            let dateW = 150; 
+                            let textW = titleW + dateW + 30; 
                             
                             let textDays = textW / estScale;
                             let evStartX, evEndX;
@@ -1312,6 +1487,7 @@
             reader.readAsText(file);
             e.target.value = '';
         }
+
 
         function yearToWorld(year) {
             if (year >= 1) return (year - 1) * DAYS_IN_YEAR;
@@ -2598,8 +2774,8 @@
                             if (ev.startCirca || ev.endCirca) {
                                 const gradFill = ctx.createLinearGradient(px, 0, px + sw, 0);
                                 
-                                const startFadePx = (ev.startFadeYears || 50) * DAYS_IN_YEAR * scale;
-                                const endFadePx = (ev.endFadeYears || 50) * DAYS_IN_YEAR * scale;
+                                const startFadePx = (ev.startFadeDays !== undefined ? ev.startFadeDays : (ev.startFadeYears || 50) * DAYS_IN_YEAR) * scale;
+                                const endFadePx = (ev.endFadeDays !== undefined ? ev.endFadeDays : (ev.endFadeYears || 50) * DAYS_IN_YEAR) * scale;
                                 
                                 const startStop = Math.max(0, Math.min(startFadePx / sw, 0.49));
                                 const endStop = Math.min(1, Math.max(1 - endFadePx / sw, 0.51));
@@ -3039,12 +3215,36 @@
                 timeSwitch.classList.remove('hidden');
                 timeSwitch.classList.add('flex');
                 
+                document.querySelectorAll('.fade-md-input').forEach(el => { el.classList.remove('hidden'); el.classList.add('block'); });
+                document.getElementById('edit-fade-start-y').classList.replace('w-full', 'w-1/3');
+                document.getElementById('edit-fade-end-y').classList.replace('w-full', 'w-1/3');
+                
                 if (timeEnabled) {
                     timeCont.classList.remove('hidden');
                     timeCont.classList.add('grid');
+                    document.querySelectorAll('.fade-time-input').forEach(el => { el.classList.remove('hidden'); el.classList.add('block'); });
+                    
+                    ['edit-fade-start-y', 'edit-fade-start-m', 'edit-fade-start-d', 'edit-fade-start-h', 'edit-fade-start-min',
+                     'edit-fade-end-y', 'edit-fade-end-m', 'edit-fade-end-d', 'edit-fade-end-h', 'edit-fade-end-min'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) {
+                            el.classList.remove('w-1/3', 'w-full', 'p-3.5', 'text-sm');
+                            el.classList.add('w-1/5', 'py-2', 'px-1', 'text-center', 'text-xs');
+                        }
+                    });
                 } else {
                     timeCont.classList.add('hidden');
                     timeCont.classList.remove('grid');
+                    document.querySelectorAll('.fade-time-input').forEach(el => { el.classList.add('hidden'); el.classList.remove('block'); });
+                    
+                    ['edit-fade-start-y', 'edit-fade-start-m', 'edit-fade-start-d', 'edit-fade-start-h', 'edit-fade-start-min',
+                     'edit-fade-end-y', 'edit-fade-end-m', 'edit-fade-end-d', 'edit-fade-end-h', 'edit-fade-end-min'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if(el) {
+                            el.classList.remove('w-1/5', 'w-full', 'p-2', 'py-2', 'px-1', 'text-center', 'text-xs');
+                            el.classList.add('w-1/3', 'p-3.5', 'text-sm');
+                        }
+                    });
                 }
             } else {
                 mdCont.classList.add('hidden');
@@ -3054,8 +3254,20 @@
                 timeCont.classList.add('hidden');
                 timeCont.classList.remove('grid');
                 document.getElementById('edit-enable-time').checked = false;
+                
+                document.querySelectorAll('.fade-md-input').forEach(el => { el.classList.add('hidden'); el.classList.remove('block'); });
+                document.querySelectorAll('.fade-time-input').forEach(el => { el.classList.add('hidden'); el.classList.remove('block'); });
+                
+                ['edit-fade-start-y', 'edit-fade-end-y'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) {
+                        el.classList.remove('w-1/3', 'w-1/5', 'p-2', 'py-2', 'px-1', 'text-center', 'text-xs');
+                        el.classList.add('w-full', 'p-3.5', 'text-sm');
+                    }
+                });
             }
         }
+
 
         function updateFadeVisibility() {
             const isSpan = currentEditType === 'span';
@@ -3067,14 +3279,14 @@
             const endWrap = document.getElementById('edit-fade-end-wrapper');
 
             if (isSpan && (sCirca || eCirca)) {
-                fadeCont.classList.remove('hidden');
+                fadeCont.classList.remove('hidden'); fadeCont.classList.add('flex');
                 startWrap.style.display = sCirca ? 'block' : 'none';
                 endWrap.style.display = eCirca ? 'block' : 'none';
-                fadeCont.className = (sCirca && eCirca) ? 'grid grid-cols-2 gap-4 transition-all' : 'grid grid-cols-1 gap-4 transition-all';
             } else {
-                fadeCont.classList.add('hidden');
+                fadeCont.classList.add('hidden'); fadeCont.classList.remove('flex');
             }
         }
+
 
         function toggleMapInput() {
             const checked = document.getElementById('edit-has-map').checked;
@@ -3154,7 +3366,14 @@
         
         function openEditor() {
             document.getElementById('editor-title').innerText = "New Event";
-            ['edit-id', 'edit-title', 'edit-year', 'edit-year-end', 'edit-desc', 'edit-fade-start', 'edit-fade-end', 'edit-map-url'].forEach(id => document.getElementById(id).value = '');
+            ['edit-id', 'edit-title', 'edit-year', 'edit-year-end', 'edit-desc', 'edit-map-url',
+             'edit-fade-start-y', 'edit-fade-start-m', 'edit-fade-start-d', 'edit-fade-start-h', 'edit-fade-start-min',
+             'edit-fade-end-y', 'edit-fade-end-m', 'edit-fade-end-d', 'edit-fade-end-h', 'edit-fade-end-min'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = '';
+             });
+             document.getElementById('edit-fade-start-y').value = '50';
+             document.getElementById('edit-fade-end-y').value = '50';
             
             document.getElementById('edit-start-circa').checked = false;
             document.getElementById('edit-end-circa').checked = false;
@@ -3213,8 +3432,23 @@
                 document.getElementById('edit-year-end').value = Math.round(Math.abs(yEnd));
                 document.getElementById('edit-era-end').value = yEnd >= 0 ? 'AD' : 'BC';
                 document.getElementById('edit-end-circa').checked = !!ev.endCirca;
-                document.getElementById('edit-fade-start').value = ev.startFadeYears || 50;
-                document.getElementById('edit-fade-end').value = ev.endFadeYears || 50;
+                if (ev.fadeData) {
+                    document.getElementById('edit-fade-start-y').value = ev.fadeData.sY !== undefined ? ev.fadeData.sY : 50;
+                    document.getElementById('edit-fade-start-m').value = ev.fadeData.sM || '';
+                    document.getElementById('edit-fade-start-d').value = ev.fadeData.sD || '';
+                    document.getElementById('edit-fade-start-h').value = ev.fadeData.sH || '';
+                    document.getElementById('edit-fade-start-min').value = ev.fadeData.sMin || '';
+                    
+                    document.getElementById('edit-fade-end-y').value = ev.fadeData.eY !== undefined ? ev.fadeData.eY : 50;
+                    document.getElementById('edit-fade-end-m').value = ev.fadeData.eM || '';
+                    document.getElementById('edit-fade-end-d').value = ev.fadeData.eD || '';
+                    document.getElementById('edit-fade-end-h').value = ev.fadeData.eH || '';
+                    document.getElementById('edit-fade-end-min').value = ev.fadeData.eMin || '';
+                } else {
+                    document.getElementById('edit-fade-start-y').value = ev.startFadeYears || 50;
+                    document.getElementById('edit-fade-end-y').value = ev.endFadeYears || 50;
+                }
+
                 setEventType('span');
             } else {
                 document.getElementById('edit-year-end').value = "";
@@ -3379,6 +3613,34 @@
                 }
             }
 
+            let sFadeWorldDays = 0;
+            let eFadeWorldDays = 0;
+            let fadeData = null;
+
+            if (isSpan) {
+                const getVal = (id) => parseFloat(document.getElementById(id).value) || 0;
+                
+                const sY = getVal('edit-fade-start-y');
+                const sM = getVal('edit-fade-start-m');
+                const sD = getVal('edit-fade-start-d');
+                const sH = getVal('edit-fade-start-h');
+                const sMin = getVal('edit-fade-start-min');
+                
+                const eY = getVal('edit-fade-end-y');
+                const eM = getVal('edit-fade-end-m');
+                const eD = getVal('edit-fade-end-d');
+                const eH = getVal('edit-fade-end-h');
+                const eMin = getVal('edit-fade-end-min');
+
+                fadeData = { sY, sM, sD, sH, sMin, eY, eM, eD, eH, eMin };
+                
+                // Convert down to precise fractional days
+                sFadeWorldDays = (sY * DAYS_IN_YEAR) + (sM * 30.4375) + sD + (sH / 24) + (sMin / 1440);
+                if (sFadeWorldDays === 0) sFadeWorldDays = 50 * DAYS_IN_YEAR;
+                
+                eFadeWorldDays = (eY * DAYS_IN_YEAR) + (eM * 30.4375) + eD + (eH / 24) + (eMin / 1440);
+                if (eFadeWorldDays === 0) eFadeWorldDays = 50 * DAYS_IN_YEAR;
+            }
 
             const evData = {
                 id, title, desc: document.getElementById('edit-desc').value.trim(), lane, 
@@ -3390,13 +3652,17 @@
                 x: xStart, type: isSpan ? 'span' : 'point',
                 startCirca: document.getElementById('edit-start-circa').checked,
                 endCirca: isSpan ? document.getElementById('edit-end-circa').checked : false,
-                startFadeYears: isSpan ? (parseFloat(document.getElementById('edit-fade-start').value) || 50) : null,
-                endFadeYears: isSpan ? (parseFloat(document.getElementById('edit-fade-end').value) || 50) : null,
+                startFadeDays: isSpan ? sFadeWorldDays : null,
+                endFadeDays: isSpan ? eFadeWorldDays : null,
+                startFadeYears: isSpan ? (parseFloat(document.getElementById('edit-fade-start-y').value) || 50) : null,
+                endFadeYears: isSpan ? (parseFloat(document.getElementById('edit-fade-end-y').value) || 50) : null,
+                fadeData: fadeData,
                 xEnd: xEnd,
                 mdEnabled, timeEnabled,
                 sMonth, sDay, sHour, sMinute,
                 eMonth, eDay, eHour, eMinute
             };
+
 
             if (existingIdx >= 0) events[existingIdx] = evData;
             else events.push(evData);
