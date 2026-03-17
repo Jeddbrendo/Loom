@@ -2,6 +2,7 @@ LOOM Timelines
 
 A powerful, standalone web application for creating and visualizing complex historical timelines. Built entirely with vanilla JavaScript and HTML5 Canvas, it runs locally in your browser without requiring a backend.
 
+
 🌟 Features
 Infinite Pan & Zoom: Navigate smoothly through thousands of events via mouse, scroll, or touch gestures.
 
@@ -27,6 +28,8 @@ Data Portability (Local Storage): Auto-saves projects to your browser. Backup or
 
 Bulk CSV Import: Rapidly populate timelines by importing a CSV file mapping your data directly to the canvas.
 
+
+
 🚀 Quick Start
 LOOM Timelines is a zero-dependency, single-file application.
 
@@ -37,6 +40,8 @@ Double-click to open it in any modern web browser.
 Start building!
 
 (Note: An internet connection is required on first load to fetch Tailwind CSS and Lucide Icons).
+
+
 
 💡 Basic Usage
 Navigate: Click and drag to pan; use the scroll wheel to zoom.
