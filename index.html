@@ -434,7 +434,6 @@
                             <input type="number" id="edit-fade-start-m" placeholder="Mth" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="11">
                             <input type="number" id="edit-fade-start-d" placeholder="Days" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="30">
                             <input type="number" id="edit-fade-start-h" placeholder="Hrs" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="23">
-                            <input type="number" id="edit-fade-start-min" placeholder="Min" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="59">
                         </div>
                     </div>
                     <div id="edit-fade-end-wrapper">
@@ -444,7 +443,6 @@
                             <input type="number" id="edit-fade-end-m" placeholder="Mth" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="11">
                             <input type="number" id="edit-fade-end-d" placeholder="Days" class="w-1/3 p-3.5 text-sm outline-none hidden fade-md-input" min="0" max="30">
                             <input type="number" id="edit-fade-end-h" placeholder="Hrs" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="23">
-                            <input type="number" id="edit-fade-end-min" placeholder="Min" class="w-1/3 p-3.5 text-sm outline-none hidden fade-time-input" min="0" max="59">
                         </div>
                     </div>
                 </div>
@@ -1379,8 +1377,8 @@
                             
                             // Map default fade years to the fadeData object for consistency
                             fadeData: { 
-                                sY: startFadeYears, sM: 0, sD: 0, sH: 0, sMin: 0, 
-                                eY: endFadeYears, eM: 0, eD: 0, eH: 0, eMin: 0 
+                                sY: startFadeYears, sM: 0, sD: 0, sH: 0,
+                                eY: endFadeYears, eM: 0, eD: 0, eH: 0, 
                             },
                             startFadeDays: startFadeYears * DAYS_IN_YEAR,
                             endFadeDays: endFadeYears * DAYS_IN_YEAR
@@ -2648,50 +2646,71 @@
         // Ticks Render Abstraction
         function renderRulerTicks(ticksArray, baseRulerY, t) {
             ctx.textAlign = 'center';
+
+            // Batch standard tertiary ticks
+            ctx.strokeStyle = t.textTertiary; 
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ticksArray.forEach(tck => {
+                if (!tck.isMonthText && !tck.is1AD && !tck.is1000s) {
+                    let tickLen = 12; 
+                    if (tck.isMonth) tickLen = 8;
+                    if (tck.isDay) tickLen = 5;
+                    ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + tickLen);
+                }
+            });
+            ctx.stroke();
+
+            // Batch secondary (1000s) ticks
+            ctx.strokeStyle = t.textSecondary; 
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ticksArray.forEach(tck => {
+                if (tck.is1000s) {
+                    ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 18);
+                }
+            });
+            ctx.stroke();
+
+            // Batch primary (1AD) ticks
+            ctx.strokeStyle = t.textPrimary; 
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ticksArray.forEach(tck => {
+                if (tck.is1AD) {
+                    ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 24);
+                }
+            });
+            ctx.stroke();
+
+            // Render Text Passes
             ticksArray.forEach(tck => {
                 if (tck.isMonthText) {
                     ctx.fillStyle = t.textSecondary; 
                     ctx.font = `700 10px ${userSettings.font}`;
                     ctx.fillText(tck.label, tck.x, baseRulerY + 34); 
                 } else if (tck.is1AD) {
-                    ctx.strokeStyle = t.textPrimary; 
-                    ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 24); ctx.stroke();
                     ctx.fillStyle = t.textPrimary; 
                     ctx.font = `900 14px ${userSettings.font}`; 
                     ctx.fillText(tck.label, tck.x, baseRulerY + 48); 
                 } else if (tck.is1000s) {
-                    ctx.strokeStyle = t.textSecondary; 
-                    ctx.lineWidth = 2;
-                    ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + 18); ctx.stroke();
                     ctx.fillStyle = t.textSecondary; 
                     ctx.font = `bold 12px ${userSettings.font}`; 
                     ctx.fillText(tck.label, tck.x, baseRulerY + 46); 
-                } else {
-                    ctx.strokeStyle = t.textTertiary; 
-                    ctx.lineWidth = 1;
-                    
-                    let tickLen = 12; 
-                    if (tck.isMonth) tickLen = 8;
-                    if (tck.isDay) tickLen = 5;
-                    
-                    ctx.beginPath(); ctx.moveTo(tck.x, baseRulerY); ctx.lineTo(tck.x, baseRulerY + tickLen); ctx.stroke();
-                    
-                    if (tck.label) {
-                        if (tck.isDay) {
-                            if (tck.isFirstDay) {
-                                ctx.fillStyle = t.textPrimary; 
-                                ctx.font = `bold 12px ${userSettings.font}`;
-                            } else {
-                                ctx.fillStyle = t.textTertiary; 
-                                ctx.font = `500 10px ${userSettings.font}`;
-                            }
-                            ctx.fillText(tck.label, tck.x, baseRulerY + 20); 
-                        } else if (tck.isYear) {
+                } else if (tck.label) {
+                    if (tck.isDay) {
+                        if (tck.isFirstDay) {
                             ctx.fillStyle = t.textPrimary; 
-                            ctx.font = `600 11px ${userSettings.font}`;
-                            ctx.fillText(tck.label, tck.x, baseRulerY + 46); 
+                            ctx.font = `bold 12px ${userSettings.font}`;
+                        } else {
+                            ctx.fillStyle = t.textTertiary; 
+                            ctx.font = `500 10px ${userSettings.font}`;
                         }
+                        ctx.fillText(tck.label, tck.x, baseRulerY + 20); 
+                    } else if (tck.isYear) {
+                        ctx.fillStyle = t.textPrimary; 
+                        ctx.font = `600 11px ${userSettings.font}`;
+                        ctx.fillText(tck.label, tck.x, baseRulerY + 46); 
                     }
                 }
             });
@@ -2719,21 +2738,24 @@
                     let endY = Math.ceil(worldToYear((width - offsetX) / scale) / gridStepYrs) * gridStepYrs;
 
                     ctx.strokeStyle = t.gridLine;
-
+                    ctx.beginPath();
                     for (let y = startY; y <= endY; y += gridStepYrs) {
                         if (y===0) continue;
                         let labelYear = y;
                         let days = labelYear > 0 ? (labelYear - 1) * DAYS_IN_YEAR : labelYear * DAYS_IN_YEAR;
                         const x = offsetX + (days * scale);
                         
-                        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+                        ctx.moveTo(x, 0); ctx.lineTo(x, height);
                     }
+                    ctx.stroke();
                 }
 
                 const laneMap = new Map();
                 getVisibleLanes().forEach(l => laneMap.set(l.id, l));
 
                 let subLaneIdx = 0;
+                ctx.strokeStyle = t.border;
+                ctx.beginPath();
                 for(const lane of laneMap.values()) {
                     const y = offsetY + lane.renderY;
                     if (lane._domNode) lane._domNode.style.top = `${y}px`;
@@ -2743,10 +2765,12 @@
                         ctx.fillRect(0, y, width, lane.height);
                         subLaneIdx++;
                     }
-                    ctx.strokeStyle = t.border;
-                    ctx.beginPath(); ctx.moveTo(0, y + lane.height); ctx.lineTo(width, y + lane.height); ctx.stroke();
-                };
+                    ctx.moveTo(0, y + lane.height); ctx.lineTo(width, y + lane.height);
+                }
+                ctx.stroke();
 
+                ctx.font = `600 13px ${userSettings.font}`; // Set globally for all events to save DOM operations
+                
                 for(const lane of laneMap.values()) {
                     if (lanesTree.includes(lane)) continue;
 
@@ -2807,7 +2831,6 @@
                             ctx.fill();
                             
                             if (px + sw > 0 && px < width) {
-                                ctx.font = `600 13px ${userSettings.font}`;
                                 const titleText = `${ev.title}`;
                                 const sStr = (ev.startCirca ? "c. " : "") + formatEventDate(ev, false);
                                 const eStr = (ev.endCirca ? "c. " : "") + formatEventDate(ev, true);
@@ -2868,7 +2891,6 @@
                                 if (isSelected) { ctx.strokeStyle = selColor; ctx.lineWidth = 2; ctx.stroke(); }
                             }
 
-                            ctx.font = `600 13px ${userSettings.font}`;
                             const dStr = (ev.startCirca ? "c. " : "") + formatEventDate(ev, false);
                             const fullText = `${ev.title} (${dStr})`;
                             const textW = ctx.measureText(fullText).width;
@@ -2929,6 +2951,7 @@
 
             } catch(e) { console.error("Render loop failed:", e); }
         }
+
 
         window.changeSlide = function(e, id, dir) {
             e.preventDefault(); 
@@ -3229,7 +3252,7 @@
                         const el = document.getElementById(id);
                         if(el) {
                             el.classList.remove('w-1/3', 'w-full', 'p-3.5', 'text-sm');
-                            el.classList.add('w-1/5', 'py-2', 'px-1', 'text-center', 'text-xs');
+                            el.classList.add('w-1/4', 'py-2', 'px-2', 'text-center', 'text-xs');
                         }
                     });
                 } else {
@@ -3241,7 +3264,7 @@
                      'edit-fade-end-y', 'edit-fade-end-m', 'edit-fade-end-d', 'edit-fade-end-h', 'edit-fade-end-min'].forEach(id => {
                         const el = document.getElementById(id);
                         if(el) {
-                            el.classList.remove('w-1/5', 'w-full', 'p-2', 'py-2', 'px-1', 'text-center', 'text-xs');
+                            el.classList.remove('w-1/4', 'w-full', 'p-2', 'py-2', 'px-2', 'text-center', 'text-xs');
                             el.classList.add('w-1/3', 'p-3.5', 'text-sm');
                         }
                     });
@@ -3437,13 +3460,11 @@
                     document.getElementById('edit-fade-start-m').value = ev.fadeData.sM || '';
                     document.getElementById('edit-fade-start-d').value = ev.fadeData.sD || '';
                     document.getElementById('edit-fade-start-h').value = ev.fadeData.sH || '';
-                    document.getElementById('edit-fade-start-min').value = ev.fadeData.sMin || '';
                     
                     document.getElementById('edit-fade-end-y').value = ev.fadeData.eY !== undefined ? ev.fadeData.eY : 50;
                     document.getElementById('edit-fade-end-m').value = ev.fadeData.eM || '';
                     document.getElementById('edit-fade-end-d').value = ev.fadeData.eD || '';
                     document.getElementById('edit-fade-end-h').value = ev.fadeData.eH || '';
-                    document.getElementById('edit-fade-end-min').value = ev.fadeData.eMin || '';
                 } else {
                     document.getElementById('edit-fade-start-y').value = ev.startFadeYears || 50;
                     document.getElementById('edit-fade-end-y').value = ev.endFadeYears || 50;
@@ -3624,21 +3645,19 @@
                 const sM = getVal('edit-fade-start-m');
                 const sD = getVal('edit-fade-start-d');
                 const sH = getVal('edit-fade-start-h');
-                const sMin = getVal('edit-fade-start-min');
                 
                 const eY = getVal('edit-fade-end-y');
                 const eM = getVal('edit-fade-end-m');
                 const eD = getVal('edit-fade-end-d');
                 const eH = getVal('edit-fade-end-h');
-                const eMin = getVal('edit-fade-end-min');
 
-                fadeData = { sY, sM, sD, sH, sMin, eY, eM, eD, eH, eMin };
+                fadeData = { sY, sM, sD, sH, sMin, eY, eM, eD, eH };
                 
                 // Convert down to precise fractional days
-                sFadeWorldDays = (sY * DAYS_IN_YEAR) + (sM * 30.4375) + sD + (sH / 24) + (sMin / 1440);
+                sFadeWorldDays = (sY * DAYS_IN_YEAR) + (sM * 30.4375) + sD + (sH / 24);
                 if (sFadeWorldDays === 0) sFadeWorldDays = 50 * DAYS_IN_YEAR;
                 
-                eFadeWorldDays = (eY * DAYS_IN_YEAR) + (eM * 30.4375) + eD + (eH / 24) + (eMin / 1440);
+                eFadeWorldDays = (eY * DAYS_IN_YEAR) + (eM * 30.4375) + eD + (eH / 24);
                 if (eFadeWorldDays === 0) eFadeWorldDays = 50 * DAYS_IN_YEAR;
             }
 
