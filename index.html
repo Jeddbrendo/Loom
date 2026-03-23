@@ -1843,10 +1843,10 @@
                 const mobileMenuToggle = document.createElement('button');
                 mobileMenuToggle.type = 'button';
                 mobileMenuToggle.innerHTML = '<i data-lucide="more-vertical" class="w-5 h-5 pointer-events-none app-text-tertiary hover:app-text-primary transition-colors"></i>';
-                mobileMenuToggle.className = 'p-1.5 lg:hidden cursor-pointer hover:brightness-125 rounded-lg flex items-center justify-center';
+                mobileMenuToggle.className = 'p-1.5 cursor-pointer hover:brightness-125 rounded-lg flex items-center justify-center';
                 
                 const actionsList = document.createElement('div');
-                actionsList.className = 'lane-menu-dropdown hidden lg:flex absolute right-0 sm:right-4 top-full mt-1 lg:static lg:mt-0 flex-col lg:flex-row app-card lg:!bg-transparent lg:!border-none rounded-xl lg:shadow-none p-1.5 lg:p-0 z-[100] min-w-[150px] lg:min-w-0 shadow-2xl lg:gap-1';
+                actionsList.className = 'lane-menu-dropdown hidden absolute right-0 sm:right-4 top-full mt-1 flex-col app-card rounded-xl p-1.5 z-[100] min-w-[150px] shadow-2xl';
 
                 mobileMenuToggle.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1874,8 +1874,8 @@
                     
                     const iconHtml = iconName.startsWith('<') ? iconName : `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0 pointer-events-none"></i>`;
                     
-                    btn.innerHTML = `${iconHtml} <span class="lg:hidden text-xs font-semibold tracking-wider ml-3 pointer-events-none ${isDel ? 'text-red-400' : ''}">${text}</span>`;
-                    btn.className = `w-full lg:w-auto flex items-center justify-start lg:justify-center p-3 lg:p-1.5 rounded-lg transition-colors text-left ${colorClass}`;
+                    btn.innerHTML = `${iconHtml} <span class="text-xs font-semibold tracking-wider ml-3 pointer-events-none ${isDel ? 'text-red-400' : ''}">${text}</span>`;
+                    btn.className = `w-full flex items-center justify-start p-3 rounded-lg transition-colors text-left ${colorClass}`;
                     btn.title = tooltip;
                     
                     btn.onclick = (e) => { 
